@@ -1,0 +1,21 @@
+{
+  "name": "FEMATA Ripoti",
+  "short_name": "FEMATA Ripoti",
+  "description": "Jukwaa salama la kuripoti matukio ya madini kwa faragha kamili",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#004d40",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,180 @@
+{
+  "adminTrainingEyebrow": "Training Room",
+  "adminTrainingTitle": "Admin Training Room",
+  "adminTrainingDesc": "Use the training room when administrators need guided help with case review, inbox work, analytics, access control, settings, and role-based procedures. Michelle handles direct operational guidance, while Melvin joins when a question needs deeper reasoning or comparison.",
+  "adminTrainingRoomStatus": "Room status",
+  "adminTrainingEncryption": "Secure end-to-end encryption",
+  "adminTrainingConversationSupport": "Conversation support",
+  "adminTrainingLead": "{{name}} is currently leading the conversation.",
+  "adminTrainingGuardrailTitle": "Guardrail",
+  "adminTrainingGuardrailBody": "The training room is for operational help. It will not explain source code, schemas, secret keys, or other protected system internals.",
+  "adminTrainingTyping": "{{name}} is typing...",
+  "adminTrainingJumpLatest": "Jump to latest",
+  "adminTrainingPlaceholder": "Ask the training room how to use a FEMATA feature...",
+  "adminTrainingEnterHint": "Press Enter to send. Use Shift + Enter for a new line.",
+  "adminTrainingSend": "Send message",
+  "adminTrainingClear": "Clear conversation",
+  "adminTrainingYou": "You",
+  "adminTrainingFallbackReply": "The training room is ready for your next FEMATA workflow question.",
+  "adminTrainingError": "The training room could not answer just now.",
+  "adminTrainingAgentMichelleRole": "Direct guide",
+  "adminTrainingAgentMelvinRole": "Reasoning specialist",
+  "adminTrainingAgentMichelleSummary": "Handles day-to-day operational guidance, quick explanations, and practical next steps inside FEMATA.",
+  "adminTrainingAgentMelvinSummary": "Steps in for deeper comparisons, diagnosis, prioritization, and structured reasoning when a question needs heavier analysis.",
+  "adminTrainingActive": "Active",
+  "adminTrainingPrompt1": "How do I route and update a case correctly?",
+  "adminTrainingPrompt2": "How do notifications differ from direct messages?",
+  "adminTrainingPrompt3": "What can I edit in my profile and what is locked?",
+  "adminTrainingPrompt4": "How do desk and region assignments control visibility?",
+  "adminTrainingPrompt5": "When should Michelle bring in Melvin?",
+  "adminTrainingStarterOnline": "Admin training room online. Michelle handles direct operational help, and Melvin joins when deeper reasoning is needed.",
+  "adminTrainingStarterIntro": "I'm Michelle. Ask me any FEMATA workflow question. If something needs deeper reasoning or comparison work, I'll bring Melvin in and we'll keep the conversation moving.",
+  "trainingIntro": "I'm Michelle. Ask me about cases review, inbox work, notifications, analytics, access control, zones, profile settings, or language and theme changes.",
+  "trainingGreeting": "I'm Michelle. I can walk you through case review, routing, inbox work, analytics, access control, profile settings, or dashboard preferences. Tell me what you're trying to do and I'll guide you step by step.",
+  "trainingGuardrail": "I can guide you on how to use FEMATA safely and effectively, but I can't explain proprietary internals such as source code, database structure, or protected implementation details. If you tell me the task you're trying to complete, I'll guide you through the dashboard steps instead.",
+  "trainingFallback": "I can help with using FEMATA rather than its internal construction. Ask me about case handling, routing by desk and region, inbox and notifications, analytics exports, access control, profile settings, zone management, language changes, or theme settings, and I'll guide you in plain operational steps.",
+  "trainingHandoffToMelvin": "Michelle here. This needs deeper reasoning, so I'm handing you over to my colleague Melvin to work through it carefully.",
+  "trainingHandoffToMichelle": "Melvin here. The deeper analysis is done, so I'll hand you back to Michelle for the practical next steps.",
+  "trainingMelvinUnavailablePrefix": "Melvin is unavailable right now, so Michelle is stepping in with the closest operational guidance.",
+  "trainingSuggestedPrompts": [
+    "How do I route and update a case correctly?",
+    "What can I edit in my profile and what is locked?",
+    "How do notifications differ from direct messages?",
+    "How do I switch language or theme in the dashboard?",
+    "How do desk and region assignments control visibility?"
+  ],
+  "trainingGuardrailSuggestedPrompts": [
+    "How do I update a case from intake to the next desk?",
+    "How do I send a notification and track replies?",
+    "How do I export an analytics report?"
+  ],
+  "trainingTopics": [
+    {
+      "key": "cases_review",
+      "title": "Cases review",
+      "keywords": [
+        "case",
+        "queue",
+        "review",
+        "lookup",
+        "track",
+        "reference",
+        "status",
+        "assigned desk",
+        "public follow up"
+      ],
+      "response": "For case work, start in Cases Review. Use the queue for the normal workload, or Instant Lookup when someone calls with an internal tracking number or public reference. Open one case at a time, review the overview, public-side notes, history, and actions tabs, then save updates only if your role allows editing. If a field looks locked or read-only, it usually means your role has view access only, or the field is controlled by routing logic rather than manual editing."
+    },
+    {
+      "key": "routing_scope",
+      "title": "Desk and location routing",
+      "keywords": [
+        "desk",
+        "region",
+        "municipality",
+        "routing",
+        "assigned",
+        "coverage",
+        "who sees",
+        "scope",
+        "intake",
+        "licensing"
+      ],
+      "response": "Case visibility follows desk and location coverage. A user normally sees only the cases routed to their assigned desk and region, and municipality-specific coverage narrows that further. Super administrators and analysts have broader visibility, while operational staff stay inside their assigned scope. If a case seems missing, first confirm the desk assignment, region, municipality, and whether the user account is active."
+    },
+    {
+      "key": "inbox_notifications",
+      "title": "Inbox and notifications",
+      "keywords": [
+        "message",
+        "messages",
+        "notification",
+        "respond",
+        "reply",
+        "subject",
+        "attachment",
+        "delivered",
+        "read",
+        "edit message"
+      ],
+      "response": "Use Inbox for direct administrator-to-administrator communication, and Notifications for formal alerts or instructions. A single tick means the message was sent, double ticks mean it reached the recipient's inbox, and green double ticks mean it was opened. Attachments can be opened in a browser tab or downloaded. When replying to a notification, the subject is locked automatically so the response stays tied to the original notice."
+    },
+    {
+      "key": "analytics",
+      "title": "Analytics and exports",
+      "keywords": [
+        "analytics",
+        "report",
+        "export",
+        "trend",
+        "chart",
+        "summary",
+        "stakeholder",
+        "management report",
+        "period"
+      ],
+      "response": "Analytics is designed for workload, trend, and hotspot monitoring. Start by choosing the reporting period and scope, then move through the analytics views to review summary patterns, drivers, operations, and workforce activity. The export tool creates a formal narrative report with header details, executive summary, insights, anonymized examples, recommendations, and analyst sign-off. If your account does not carry the analyst or super administrator role, analytics options may be limited or hidden."
+    },
+    {
+      "key": "access_control",
+      "title": "Access control",
+      "keywords": [
+        "user",
+        "users",
+        "access",
+        "role",
+        "roles",
+        "create user",
+        "reset password",
+        "revoke",
+        "suspend",
+        "wizard"
+      ],
+      "response": "Access Control is where high-level administrators create users, assign roles, set desk and location coverage, reset passwords, revoke sessions, and suspend accounts. The registration flow is wizard-based so identity, organizational placement, system access, analyst details, and institutional metadata are captured step by step. Ordinary users can update their own profile picture, signature, password, and selected profile details, but core assignment fields are normally controlled by a super administrator."
+    },
+    {
+      "key": "profile_settings",
+      "title": "Profile and settings",
+      "keywords": [
+        "profile",
+        "settings",
+        "language",
+        "theme",
+        "light mode",
+        "dark mode",
+        "display name",
+        "signature",
+        "avatar",
+        "version"
+      ],
+      "response": "Open Settings for language, theme, role visibility, profile access, and the current system version. The profile page lets you change your password, avatar, display-facing information, and signature if your workflow requires report attribution. Language changes affect the admin interface, and theme changes switch the workspace between light and dark presentation without changing your permissions."
+    },
+    {
+      "key": "zones",
+      "title": "Zones",
+      "keywords": [
+        "zone",
+        "zones",
+        "region grouping",
+        "lake zone",
+        "northern zone",
+        "zone management"
+      ],
+      "response": "Zones are derived from the selected region and support routing, reporting, and analytics. In normal case registration and user assignment, the zone appears automatically once the region is known. Zone Management is a separate administrative function for renaming zones and moving regions between them. Operational users do not need to choose zones manually during ordinary case work."
+    },
+    {
+      "key": "editability",
+      "title": "What can and cannot be edited",
+      "keywords": [
+        "edit",
+        "editable",
+        "locked",
+        "cannot edit",
+        "read only",
+        "disabled",
+        "change"
+      ],
+      "response": "If the system blocks editing, it is usually protecting assignment integrity, audit history, or role boundaries. Examples of items commonly restricted are desk or location scope, locked notification subjects, and some administrative assignment fields. Profile basics, messages you authored, signatures, passwords, and approved response fields are more likely to be editable, depending on your role."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+# Secrets and local environment
+backend/.env
+backend/.env.local
+
+# Python backend
+backend/.venv/
+backend/__pycache__/
+backend/.tmp/
+backend/uploads/
+backend/*.db
+backend/*.sqlite
+backend/*.log
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.tmp/
+
+# Local tooling and temp
+.codex-temp/
+.pip-tmp/
+
+# OS/editor noise
+Thumbs.db
+.DS_Store

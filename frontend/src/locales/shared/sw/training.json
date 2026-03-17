@@ -1,0 +1,190 @@
+{
+  "adminTrainingEyebrow": "Chumba cha mafunzo",
+  "adminTrainingTitle": "Chumba cha Mafunzo cha Wasimamizi",
+  "adminTrainingDesc": "Tumia chumba cha mafunzo pale wasimamizi wanapohitaji mwongozo kuhusu mapitio ya kesi, kikasha, takwimu, udhibiti wa upatikanaji, mipangilio, na taratibu za majukumu. Michelle hutoa mwongozo wa moja kwa moja wa uendeshaji, huku Melvin akiunganishwa wakati swali linahitaji uchambuzi wa kina au ulinganisho.",
+  "adminTrainingRoomStatus": "Hali ya chumba",
+  "adminTrainingEncryption": "Usimbaji salama wa mwanzo hadi mwisho",
+  "adminTrainingConversationSupport": "Msaada wa mazungumzo",
+  "adminTrainingLead": "{{name}} anaongoza mazungumzo kwa sasa.",
+  "adminTrainingGuardrailTitle": "Mipaka ya mwongozo",
+  "adminTrainingGuardrailBody": "Chumba cha mafunzo ni kwa msaada wa kiutendaji. Hakiwezi kueleza msimbo wa chanzo, miundo ya data, funguo za siri, au taarifa nyingine zilizolindwa za mfumo.",
+  "adminTrainingTyping": "{{name}} anaandika...",
+  "adminTrainingJumpLatest": "Ruka hadi ujumbe wa mwisho",
+  "adminTrainingPlaceholder": "Uliza chumba cha mafunzo jinsi ya kutumia kipengele cha FEMATA...",
+  "adminTrainingEnterHint": "Bonyeza Enter kutuma. Tumia Shift + Enter kuanza mstari mpya.",
+  "adminTrainingSend": "Tuma ujumbe",
+  "adminTrainingClear": "Futa mazungumzo",
+  "adminTrainingYou": "Wewe",
+  "adminTrainingFallbackReply": "Chumba cha mafunzo kiko tayari kwa swali lako linalofuata kuhusu utendaji wa FEMATA.",
+  "adminTrainingError": "Chumba cha mafunzo hakikuweza kujibu kwa sasa.",
+  "adminTrainingAgentMichelleRole": "Mwongozo wa moja kwa moja",
+  "adminTrainingAgentMelvinRole": "Mtaalamu wa uchambuzi",
+  "adminTrainingAgentMichelleSummary": "Hushughulikia mwongozo wa kila siku wa uendeshaji, maelezo ya haraka, na hatua za vitendo ndani ya FEMATA.",
+  "adminTrainingAgentMelvinSummary": "Hujiunga kwa ulinganisho wa kina, uchunguzi, uwekaji wa vipaumbele, na hoja za kimfumo pale swali linapohitaji uchambuzi mzito zaidi.",
+  "adminTrainingActive": "Hai",
+  "adminTrainingPrompt1": "Ninaelekezaje na kusasisha kesi kwa usahihi?",
+  "adminTrainingPrompt2": "Arifa zinatofautianaje na ujumbe wa moja kwa moja?",
+  "adminTrainingPrompt3": "Ninaweza kuhariri nini kwenye wasifu wangu na nini kimefungwa?",
+  "adminTrainingPrompt4": "Ugawaji wa dawati na mkoa unadhibiti vipi mwonekano wa kesi?",
+  "adminTrainingPrompt5": "Michelle anapaswa kumuita Melvin lini?",
+  "adminTrainingStarterOnline": "Chumba cha mafunzo kiko mtandaoni. Michelle hushughulikia msaada wa moja kwa moja wa uendeshaji, na Melvin hujiunga inapohitajika hoja nzito zaidi.",
+  "adminTrainingStarterIntro": "Mimi ni Michelle. Niulize swali lolote kuhusu utendaji wa FEMATA. Kama jambo litahitaji uchambuzi wa kina au ulinganisho, nitamleta Melvin na tutaendeleza mazungumzo.",
+  "trainingIntro": "Mimi ni Michelle. Niulize kuhusu mapitio ya kesi, kazi za kikasha, arifa, takwimu, udhibiti wa upatikanaji, kanda, mipangilio ya wasifu, au mabadiliko ya lugha na mandhari.",
+  "trainingGreeting": "Mimi ni Michelle. Naweza kukuongoza katika mapitio ya kesi, uelekezaji, kazi za kikasha, takwimu, udhibiti wa upatikanaji, mipangilio ya wasifu, au mapendeleo ya dashibodi. Niambie unachotaka kufanya, nami nitakuongoza hatua kwa hatua.",
+  "trainingGuardrail": "Naweza kukuongoza jinsi ya kutumia FEMATA kwa usalama na ufanisi, lakini siwezi kueleza taarifa za ndani zilizolindwa kama msimbo wa chanzo, muundo wa kanzidata, au maelezo ya utekelezaji yaliyozuiliwa. Ukiniambia kazi unayotaka kukamilisha, nitakuongoza kupitia hatua za dashibodi badala yake.",
+  "trainingFallback": "Naweza kusaidia kutumia FEMATA badala ya kueleza jinsi ilivyotengenezwa ndani. Niulize kuhusu ushughulikiaji wa kesi, uelekezaji kwa dawati na mkoa, kikasha na arifa, usafirishaji wa ripoti za takwimu, udhibiti wa upatikanaji, mipangilio ya wasifu, usimamizi wa kanda, mabadiliko ya lugha, au mandhari, nami nitakuongoza kwa hatua za kiutendaji zilizo wazi.",
+  "trainingHandoffToMelvin": "Michelle hapa. Hili linahitaji uchambuzi wa kina zaidi, kwa hiyo nakukabidhi kwa mwenzangu Melvin alifanyie kazi kwa makini.",
+  "trainingHandoffToMichelle": "Melvin hapa. Uchambuzi wa kina umekamilika, kwa hiyo nakurudisha kwa Michelle akuongoze kwenye hatua za vitendo.",
+  "trainingMelvinUnavailablePrefix": "Melvin hapatikani kwa sasa, kwa hiyo Michelle anaingia kusaidia kwa mwongozo wa karibu zaidi wa kiutendaji.",
+  "trainingSuggestedPrompts": [
+    "Ninaelekezaje na kusasisha kesi kwa usahihi?",
+    "Ninaweza kuhariri nini kwenye wasifu wangu na nini kimefungwa?",
+    "Arifa zinatofautianaje na ujumbe wa moja kwa moja?",
+    "Ninabadilishaje lugha au mandhari kwenye dashibodi?",
+    "Ugawaji wa dawati na mkoa unadhibiti vipi mwonekano wa kesi?"
+  ],
+  "trainingGuardrailSuggestedPrompts": [
+    "Ninawezaje kusasisha kesi kutoka intake kwenda dawati linalofuata?",
+    "Ninatuma vipi arifa na kufuatilia majibu?",
+    "Ninasafirisha vipi ripoti ya takwimu?"
+  ],
+  "trainingTopics": [
+    {
+      "key": "cases_review",
+      "title": "Mapitio ya kesi",
+      "keywords": [
+        "kesi",
+        "foleni",
+        "mapitio",
+        "rejea",
+        "hali",
+        "dawati",
+        "fuatiliaji",
+        "lookup",
+        "case",
+        "queue",
+        "review",
+        "reference",
+        "status"
+      ],
+      "response": "Kwa kazi za kesi, anza kwenye Cases Review. Tumia foleni kwa kazi ya kawaida ya kila siku, au tumia Instant Lookup pale mtu anapopiga akiwa na namba ya ufuatiliaji wa ndani au rejea ya umma. Fungua kesi moja kwa wakati mmoja, kagua muhtasari, upande wa umma, historia, na tab ya hatua, kisha hifadhi masasisho pale tu jukumu lako linaporuhusu uhariri."
+    },
+    {
+      "key": "routing_scope",
+      "title": "Uelekezaji wa dawati na eneo",
+      "keywords": [
+        "dawati",
+        "mkoa",
+        "halmashauri",
+        "eneo",
+        "ufunikaji",
+        "mgawanyo",
+        "routing",
+        "region",
+        "desk",
+        "municipality",
+        "scope",
+        "assigned"
+      ],
+      "response": "Mwonekano wa kesi unafuata dawati na eneo lililopangwa. Kwa kawaida mtumiaji ataona tu kesi zilizoelekezwa kwenye dawati lake na mkoa wake, na ufunikaji maalum wa halmashauri hupunguza zaidi mwonekano huo. Wasimamizi wakuu na wachambuzi wana wigo mpana zaidi, lakini watumiaji wa kiutendaji hubaki ndani ya eneo lao walilopangiwa."
+    },
+    {
+      "key": "inbox_notifications",
+      "title": "Kikasha na arifa",
+      "keywords": [
+        "ujumbe",
+        "arifa",
+        "reply",
+        "subject",
+        "attachment",
+        "delivered",
+        "opened",
+        "message",
+        "notification",
+        "inbox",
+        "kiambatisho"
+      ],
+      "response": "Tumia Inbox kwa mawasiliano ya moja kwa moja kati ya wasimamizi, na Notifications kwa maelekezo rasmi au tahadhari. Tiki moja inaonyesha ujumbe umetumwa, tiki mbili zinaonyesha umefika kwa mpokeaji, na tiki mbili za kijani zinaonyesha ujumbe umefunguliwa. Viambatisho vinaweza kufunguliwa ndani ya kivinjari au kupakuliwa, na mada ya jibu la arifa hufungwa moja kwa moja ili majibu yabaki yameunganishwa na arifa ya awali."
+    },
+    {
+      "key": "analytics",
+      "title": "Takwimu na usafirishaji wa ripoti",
+      "keywords": [
+        "takwimu",
+        "ripoti",
+        "chart",
+        "trend",
+        "stakeholder",
+        "export",
+        "analytics",
+        "analysis",
+        "period",
+        "muhtasari"
+      ],
+      "response": "Takwimu zimeundwa kufuatilia mzigo wa kazi, mwenendo, na maeneo yenye msongamano. Anza kwa kuchagua kipindi cha ripoti na wigo wake, kisha pita kwenye tabaka za Summary, Drivers, Operations, na Workforce. Zana ya export hutengeneza ripoti rasmi ya masimulizi yenye kichwa cha taasisi, muhtasari wa utendaji, maarifa, mifano ya matukio iliyofichwa, mapendekezo, na saini ya mchambuzi."
+    },
+    {
+      "key": "access_control",
+      "title": "Udhibiti wa upatikanaji",
+      "keywords": [
+        "mtumiaji",
+        "watumiaji",
+        "ruhusa",
+        "role",
+        "roles",
+        "access",
+        "password",
+        "reset",
+        "wizard",
+        "suspend"
+      ],
+      "response": "Access Control ndipo wasimamizi wa ngazi ya juu huunda akaunti, hupanga majukumu, huweka madawati na maeneo ya ufunikaji, huweka upya nywila, hufuta vikao, na kusimamisha akaunti. Usajili unatumia wizard ya hatua kwa hatua ili utambulisho, mgawanyo wa taasisi, ufikiaji wa mfumo, taarifa za mchambuzi, na metadata za taasisi zikamatwe kwa mpangilio unaoeleweka."
+    },
+    {
+      "key": "profile_settings",
+      "title": "Wasifu na mipangilio",
+      "keywords": [
+        "wasifu",
+        "mipangilio",
+        "lugha",
+        "mandhari",
+        "theme",
+        "profile",
+        "settings",
+        "signature",
+        "avatar",
+        "version"
+      ],
+      "response": "Fungua Settings kwa ajili ya lugha, mandhari, mwonekano wa majukumu, ufikiaji wa wasifu, na toleo la mfumo. Ukurasa wa Profile hukuruhusu kubadilisha nywila, picha, taarifa za mwonekano, na saini pale kazi yako inahitaji uthibitisho wa ripoti. Kubadilisha lugha huathiri mwonekano wa dashibodi, na kubadilisha theme hubadilisha presentation ya eneo la kazi bila kubadilisha ruhusa zako."
+    },
+    {
+      "key": "zones",
+      "title": "Kanda",
+      "keywords": [
+        "kanda",
+        "zone",
+        "zones",
+        "lake zone",
+        "northern zone",
+        "zone management",
+        "mikoa"
+      ],
+      "response": "Kanda hutokana moja kwa moja na mkoa uliochaguliwa na hutumika kwenye uelekezaji, ripoti, na takwimu. Katika usajili wa kawaida wa kesi na upangaji wa watumiaji, kanda hujitokeza zenyewe mara tu mkoa unapojulikana. Zone Management ni kazi maalum ya kiutawala ya kubadili majina ya kanda na kuhamisha mikoa kati ya kanda."
+    },
+    {
+      "key": "editability",
+      "title": "Kinachoweza na kisichoweza kuhaririwa",
+      "keywords": [
+        "hariri",
+        "locked",
+        "readonly",
+        "read only",
+        "cannot edit",
+        "edit",
+        "editable",
+        "kimefungwa"
+      ],
+      "response": "Mfumo unapozuia uhariri mara nyingi unalinda uadilifu wa ugawaji, historia ya ukaguzi, au mipaka ya majukumu. Mifano ya vitu vinavyofungwa mara nyingi ni wigo wa dawati au eneo, mada ya jibu la arifa, na baadhi ya taarifa za msingi za upangaji wa akaunti. Kwa kawaida wasifu binafsi, ujumbe uliotumwa na wewe, saini, nywila, na sehemu zilizoidhinishwa za mrejesho ndizo zinazoweza kuhaririwa kulingana na jukumu lako."
+    }
+  ]
+}

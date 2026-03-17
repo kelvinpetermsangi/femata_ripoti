@@ -1,0 +1,181 @@
+{
+  "adminTrainingEyebrow": "Salle de formation",
+  "adminTrainingTitle": "Salle de formation administrateur",
+  "adminTrainingDesc": "Utilisez la salle de formation lorsque les administrateurs ont besoin d'une aide guidee sur la revue des cas, la boite de reception, l'analytique, le controle d'acces, les parametres et les procedures liees aux roles. Michelle gere l'aide operationnelle directe, tandis que Melvin intervient lorsqu'une question exige un raisonnement ou une comparaison plus pousses.",
+  "adminTrainingRoomStatus": "Etat de la salle",
+  "adminTrainingEncryption": "Chiffrement securise de bout en bout",
+  "adminTrainingConversationSupport": "Soutien de la conversation",
+  "adminTrainingLead": "{{name}} dirige actuellement la conversation.",
+  "adminTrainingGuardrailTitle": "Garde-fou",
+  "adminTrainingGuardrailBody": "La salle de formation est reservee a l'aide operationnelle. Elle n'expliquera pas le code source, les schemas, les cles secretes ou d'autres details systeme proteges.",
+  "adminTrainingTyping": "{{name}} est en train d'ecrire...",
+  "adminTrainingJumpLatest": "Aller au plus recent",
+  "adminTrainingPlaceholder": "Demandez a la salle de formation comment utiliser une fonction FEMATA...",
+  "adminTrainingEnterHint": "Appuyez sur Entree pour envoyer. Utilisez Maj + Entree pour une nouvelle ligne.",
+  "adminTrainingSend": "Envoyer le message",
+  "adminTrainingClear": "Effacer la conversation",
+  "adminTrainingYou": "Vous",
+  "adminTrainingFallbackReply": "La salle de formation est prete pour votre prochaine question de workflow FEMATA.",
+  "adminTrainingError": "La salle de formation ne peut pas repondre pour le moment.",
+  "adminTrainingAgentMichelleRole": "Guide direct",
+  "adminTrainingAgentMelvinRole": "Specialiste du raisonnement",
+  "adminTrainingAgentMichelleSummary": "Gere l'aide operationnelle quotidienne, les explications rapides et les prochaines etapes pratiques dans FEMATA.",
+  "adminTrainingAgentMelvinSummary": "Intervient pour les comparaisons approfondies, le diagnostic, la priorisation et le raisonnement structure lorsqu'une question demande une analyse plus poussee.",
+  "adminTrainingActive": "Actif",
+  "adminTrainingPrompt1": "Comment router et mettre a jour un cas correctement ?",
+  "adminTrainingPrompt2": "Quelle est la difference entre les notifications et les messages directs ?",
+  "adminTrainingPrompt3": "Que puis-je modifier dans mon profil et qu'est-ce qui est verrouille ?",
+  "adminTrainingPrompt4": "Comment les affectations de bureau et de region controlent-elles la visibilite ?",
+  "adminTrainingPrompt5": "Quand Michelle doit-elle faire appel a Melvin ?",
+  "adminTrainingStarterOnline": "La salle de formation administrateur est en ligne. Michelle prend en charge l'aide operationnelle directe, et Melvin intervient lorsqu'un raisonnement plus pousse est necessaire.",
+  "adminTrainingStarterIntro": "Je suis Michelle. Posez-moi n'importe quelle question sur le workflow FEMATA. Si quelque chose exige un raisonnement plus pousse ou une comparaison, j'inviterai Melvin et nous poursuivrons la conversation.",
+  "trainingIntro": "Je suis Michelle. Posez-moi vos questions sur la revue des cas, le travail de boite de reception, les notifications, l'analytique, le controle d'acces, les zones, les parametres du profil ou les changements de langue et de theme.",
+  "trainingGreeting": "Je suis Michelle. Je peux vous guider dans la revue des cas, le routage, le travail de boite de reception, l'analytique, le controle d'acces, les parametres du profil ou les preferences du tableau de bord. Dites-moi ce que vous essayez de faire et je vous guiderai etape par etape.",
+  "trainingGuardrail": "Je peux vous guider pour utiliser FEMATA en toute securite et avec efficacite, mais je ne peux pas expliquer les elements internes proteges comme le code source, la structure de la base de donnees ou les details d'implementation reserves. Si vous me dites la tache que vous voulez accomplir, je vous guiderai plutot a travers les etapes du tableau de bord.",
+  "trainingFallback": "Je peux vous aider a utiliser FEMATA plutot qu'a expliquer sa construction interne. Posez-moi des questions sur le traitement des cas, le routage par bureau et par region, la boite de reception et les notifications, les exports analytiques, le controle d'acces, les parametres du profil, la gestion des zones, les changements de langue ou les reglages de theme, et je vous guiderai avec des etapes operationnelles claires.",
+  "trainingHandoffToMelvin": "Michelle ici. Cette question demande un raisonnement plus approfondi, donc je vous passe a mon collegue Melvin pour qu'il l'analyse avec soin.",
+  "trainingHandoffToMichelle": "Melvin ici. L'analyse approfondie est terminee, donc je vous renvoie vers Michelle pour les prochaines etapes pratiques.",
+  "trainingMelvinUnavailablePrefix": "Melvin n'est pas disponible pour le moment, donc Michelle prend le relais avec le guidage operationnel le plus proche.",
+  "trainingSuggestedPrompts": [
+    "Comment router et mettre a jour un cas correctement ?",
+    "Que puis-je modifier dans mon profil et qu'est-ce qui est verrouille ?",
+    "Quelle est la difference entre les notifications et les messages directs ?",
+    "Comment changer la langue ou le theme dans le tableau de bord ?",
+    "Comment les affectations de bureau et de region controlent-elles la visibilite ?"
+  ],
+  "trainingGuardrailSuggestedPrompts": [
+    "Comment faire passer un cas de la reception au bureau suivant ?",
+    "Comment envoyer une notification et suivre les reponses ?",
+    "Comment exporter un rapport analytique ?"
+  ],
+  "trainingTopics": [
+    {
+      "key": "cases_review",
+      "title": "Revue des cas",
+      "keywords": [
+        "cas",
+        "file",
+        "revue",
+        "recherche",
+        "reference",
+        "statut",
+        "bureau assigne",
+        "suivi public",
+        "queue",
+        "review"
+      ],
+      "response": "Pour le travail sur les cas, commencez dans Revue des cas. Utilisez la file pour la charge normale, ou Instant Lookup lorsqu'une personne appelle avec un numero de suivi interne ou une reference publique. Ouvrez un cas a la fois, consultez l'ensemble, les notes cote public, l'historique et les actions, puis enregistrez les mises a jour seulement si votre role autorise la modification. Si un champ semble verrouille ou en lecture seule, cela signifie generalement que votre role n'a qu'un acces de consultation ou que le champ est controle par la logique de routage."
+    },
+    {
+      "key": "routing_scope",
+      "title": "Routage par bureau et emplacement",
+      "keywords": [
+        "bureau",
+        "region",
+        "municipalite",
+        "routage",
+        "assigne",
+        "couverture",
+        "qui voit",
+        "portee",
+        "reception",
+        "licence"
+      ],
+      "response": "La visibilite des cas suit la couverture par bureau et par emplacement. Un utilisateur voit normalement uniquement les cas acheminees vers son bureau et sa region, et une couverture specifique par municipalite reduit encore cette visibilite. Les super administrateurs et les analystes disposent d'une visibilite plus large, tandis que le personnel operationnel reste dans sa portee assignee. Si un cas semble manquer, verifiez d'abord le bureau assigne, la region, la municipalite et si le compte utilisateur est actif."
+    },
+    {
+      "key": "inbox_notifications",
+      "title": "Boite de reception et notifications",
+      "keywords": [
+        "message",
+        "messages",
+        "notification",
+        "repondre",
+        "reponse",
+        "objet",
+        "piece jointe",
+        "livre",
+        "lu",
+        "modifier message"
+      ],
+      "response": "Utilisez la Boite de reception pour la communication directe entre administrateurs, et les Notifications pour les alertes formelles ou les instructions. Une seule coche signifie que le message a ete envoye, deux coches signifient qu'il a atteint la boite du destinataire, et deux coches vertes signifient qu'il a ete ouvert. Les pieces jointes peuvent etre ouvertes dans un onglet du navigateur ou telechargees. Lorsqu'on repond a une notification, l'objet est verrouille automatiquement pour que la reponse reste liee a l'avis d'origine."
+    },
+    {
+      "key": "analytics",
+      "title": "Analytique et exports",
+      "keywords": [
+        "analytique",
+        "rapport",
+        "export",
+        "tendance",
+        "graphique",
+        "resume",
+        "partie prenante",
+        "rapport de gestion",
+        "periode"
+      ],
+      "response": "L'analytique sert au suivi de la charge de travail, des tendances et des points chauds. Commencez par choisir la periode et la portee du rapport, puis parcourez les vues analytiques pour lire les tendances de synthese, les moteurs, les operations et l'activite de la main-d'oeuvre. L'outil d'export genere un rapport narratif formel avec les details d'en-tete, un resume executif, des constats, des exemples anonymises, des recommandations et la signature de l'analyste. Si votre compte ne porte pas le role d'analyste ou de super administrateur, certaines options analytiques peuvent etre limitees ou cachees."
+    },
+    {
+      "key": "access_control",
+      "title": "Controle d'acces",
+      "keywords": [
+        "utilisateur",
+        "utilisateurs",
+        "acces",
+        "role",
+        "roles",
+        "creer utilisateur",
+        "reinitialiser mot de passe",
+        "revoquer",
+        "suspendre",
+        "assistant"
+      ],
+      "response": "Le Controle d'acces est l'endroit ou les administrateurs de haut niveau creent les utilisateurs, attribuent les roles, definissent la couverture par bureau et par emplacement, reinitialisent les mots de passe, revoquent les sessions et suspendent les comptes. Le flux d'inscription suit un assistant par etapes afin de capturer progressivement l'identite, le placement organisationnel, l'acces systeme, les details d'analyste et les metadonnees institutionnelles. Les utilisateurs ordinaires peuvent mettre a jour leur photo de profil, leur signature, leur mot de passe et certains details de profil, mais les champs centraux d'affectation sont normalement controles par un super administrateur."
+    },
+    {
+      "key": "profile_settings",
+      "title": "Profil et parametres",
+      "keywords": [
+        "profil",
+        "parametres",
+        "langue",
+        "theme",
+        "mode clair",
+        "mode sombre",
+        "nom affichage",
+        "signature",
+        "avatar",
+        "version"
+      ],
+      "response": "Ouvrez les Parametres pour la langue, le theme, la visibilite des roles, l'acces au profil et la version actuelle du systeme. La page Profil vous permet de changer votre mot de passe, votre avatar, vos informations visibles et votre signature lorsque votre travail exige une attribution de rapport. Les changements de langue affectent l'interface administrateur, et les changements de theme basculent l'espace de travail entre une presentation claire et sombre sans modifier vos permissions."
+    },
+    {
+      "key": "zones",
+      "title": "Zones",
+      "keywords": [
+        "zone",
+        "zones",
+        "groupement regional",
+        "lake zone",
+        "northern zone",
+        "gestion des zones"
+      ],
+      "response": "Les zones sont derivees de la region selectionnee et servent au routage, au reporting et a l'analytique. Lors de l'enregistrement normal des cas et de l'affectation des utilisateurs, la zone apparait automatiquement des que la region est connue. La Gestion des zones est une fonction administrative separee pour renommer les zones et deplacer les regions entre elles. Les utilisateurs operationnels n'ont pas besoin de choisir les zones manuellement pendant le travail courant sur les cas."
+    },
+    {
+      "key": "editability",
+      "title": "Ce qui peut ou ne peut pas etre modifie",
+      "keywords": [
+        "modifier",
+        "modifiable",
+        "verrouille",
+        "lecture seule",
+        "impossible de modifier",
+        "desactive",
+        "changer"
+      ],
+      "response": "Si le systeme bloque la modification, c'est en general pour proteger l'integrite des affectations, l'historique d'audit ou les limites liees aux roles. Les elements souvent restreints sont par exemple la portee du bureau ou de l'emplacement, les objets de notification verrouilles et certains champs d'affectation administrative. Les elements de base du profil, les messages que vous avez rediges, les signatures, les mots de passe et les champs de reponse approuves sont plus susceptibles d'etre modifiables selon votre role."
+    }
+  ]
+}
