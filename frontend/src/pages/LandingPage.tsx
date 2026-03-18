@@ -211,14 +211,6 @@ const LandingPage = () => {
   }, [showLanguageToast]);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      setShowTalkToAgent(true);
-    }, 2500);
-
-    return () => window.clearTimeout(timeout);
-  }, []);
-
-  useEffect(() => {
     let scrollTimeout = 0;
 
     const onScroll = () => {

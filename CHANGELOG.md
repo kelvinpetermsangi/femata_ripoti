@@ -2,6 +2,15 @@
 
 All notable changes to this repository are documented in this file.
 
+## [0.8.1] - 2026-03-18
+
+### Fixed
+- Disabled automatic landing-page agent popup so the chat modal no longer opens by itself and blocks users.
+- Kept the floating FEMATA agent button available for user-initiated chat access.
+
+### Deployment
+- Released and deployed to VPS with the existing Nginx reverse proxy and HTTPS subdomain setup.
+
 ## [0.8.0] - 2026-03-18
 
 ### Added
@@ -36,4 +45,3 @@ All notable changes to this repository are documented in this file.
 ### Release Metadata
 - Release commit: `6309ee2`
 - Frontend package version: `0.8.0`
-

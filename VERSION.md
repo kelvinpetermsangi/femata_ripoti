@@ -1,8 +1,8 @@
 # Version Tracking
 
-- Current version: `0.8.0`
+- Current version: `0.8.1`
 - Release date: `2026-03-18`
-- Release commit: `6309ee2`
+- Release commit: `pending-latest-commit`
 - Frontend package version source: `frontend/package.json`
 
 ## Tracking Files
@@ -15,4 +15,3 @@
 1. Update `frontend/package.json` version if the release version changes.
 2. Add a new section in `CHANGELOG.md`.
 3. Update this file (`VERSION.md`) with new version/date/commit.
-
