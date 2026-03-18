@@ -83,6 +83,13 @@ Frontend itafungua kwenye `http://localhost:5173` na itaunganisha na backend kwe
 
 Kwa production deployment, soma [DEPLOYMENT.md](DEPLOYMENT.md).
 
+## Release Tracking
+
+Kwa kufuatilia mabadiliko na version:
+
+- [VERSION.md](VERSION.md)
+- [CHANGELOG.md](CHANGELOG.md)
+
 Windows helper scripts:
 
 - `powershell -ExecutionPolicy Bypass -File .\scripts\build-production.ps1`
