@@ -18,6 +18,7 @@ const AdminLoginPage = () => {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [languageReady, setLanguageReady] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -139,15 +140,25 @@ const AdminLoginPage = () => {
 
                 <div>
                   <label htmlFor="admin-password" className="mb-2 block text-sm font-semibold text-white">{t("adminLoginPassword")}</label>
-                  <input
-                    id="admin-password"
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500"
-                    placeholder={t("adminLoginPasswordPlaceholder")}
-                    autoComplete="current-password"
-                  />
+                  <div className="relative">
+                    <input
+                      id="admin-password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 pr-20 text-sm text-white outline-none placeholder:text-slate-500"
+                      placeholder={t("adminLoginPasswordPlaceholder")}
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((current) => !current)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl border border-white/10 bg-slate-900/70 px-3 py-1 text-xs font-semibold text-slate-200 transition hover:bg-slate-800"
+                      aria-label={showPassword ? t("hidePassword", "Hide password") : t("showPassword", "Show password")}
+                    >
+                      {showPassword ? t("hide", "Hide") : t("show", "Show")}
+                    </button>
+                  </div>
                 </div>
 
                 {error ? <div className="rounded-3xl border border-rose-300/20 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-100">{error}</div> : null}

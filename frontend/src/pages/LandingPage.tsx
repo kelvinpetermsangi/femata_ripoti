@@ -979,21 +979,26 @@ const LandingPage = () => {
       )}
 
       {showPrivacyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4">
-          <div className="w-full max-w-5xl overflow-hidden rounded-[30px] border border-white/10 bg-slate-900 shadow-2xl">
-            <div className="border-b border-white/10 bg-[linear-gradient(135deg,rgba(34,211,238,0.12),rgba(251,191,36,0.08),rgba(15,23,42,0.94))] p-6">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-hidden bg-slate-950/80 px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:items-center sm:px-4 sm:py-6">
+          <div className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col overflow-hidden rounded-[24px] border border-white/10 bg-slate-900 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:rounded-[30px]">
+            <div className="relative shrink-0 border-b border-white/10 bg-[linear-gradient(135deg,rgba(34,211,238,0.12),rgba(251,191,36,0.08),rgba(15,23,42,0.94))] p-4 sm:p-6">
               <div className="flex items-start justify-between gap-4">
-                <div>
+                <div className="min-w-0 pr-14 sm:pr-16">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">{t("privacyBadge")}</p>
-                  <h3 className="mt-2 text-2xl font-bold text-white">{t("privacyTitle")}</h3>
+                  <h3 className="mt-2 text-xl font-bold text-white sm:text-2xl">{t("privacyTitle")}</h3>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">{t('privacy_para1')}</p>
                 </div>
-                <button type="button" onClick={() => setShowPrivacyModal(false)} className="rounded-full border border-white/10 bg-slate-950/40 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10">
-                  {t("close")}
+                <button
+                  type="button"
+                  onClick={() => setShowPrivacyModal(false)}
+                  className="absolute right-4 top-4 z-10 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-slate-950/40 text-xl font-semibold text-white transition hover:bg-white/10 sm:right-6 sm:top-6"
+                  aria-label={t("close")}
+                >
+                  &times;
                 </button>
               </div>
             </div>
-            <div className="max-h-[70vh] space-y-3 overflow-y-auto p-6 pr-4 text-sm leading-7 text-slate-300">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 pr-2 text-sm leading-7 text-slate-300 sm:p-6 sm:pr-4">
               {[
                 {
                   id: 1,
@@ -1055,21 +1060,26 @@ const LandingPage = () => {
       )}
 
       {showTermsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4">
-          <div className="w-full max-w-5xl overflow-hidden rounded-[30px] border border-white/10 bg-slate-900 shadow-2xl">
-            <div className="border-b border-white/10 bg-[linear-gradient(135deg,rgba(251,191,36,0.12),rgba(34,197,94,0.08),rgba(15,23,42,0.94))] p-6">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-hidden bg-slate-950/80 px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:items-center sm:px-4 sm:py-6">
+          <div className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col overflow-hidden rounded-[24px] border border-white/10 bg-slate-900 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:rounded-[30px]">
+            <div className="relative shrink-0 border-b border-white/10 bg-[linear-gradient(135deg,rgba(251,191,36,0.12),rgba(34,197,94,0.08),rgba(15,23,42,0.94))] p-4 sm:p-6">
               <div className="flex items-start justify-between gap-4">
-                <div>
+                <div className="min-w-0 pr-14 sm:pr-16">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">{t("termsBadge")}</p>
-                  <h3 className="mt-2 text-2xl font-bold text-white">{t("termsTitle")}</h3>
+                  <h3 className="mt-2 text-xl font-bold text-white sm:text-2xl">{t("termsTitle")}</h3>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">{t('terms_para1')}</p>
                 </div>
-                <button type="button" onClick={() => setShowTermsModal(false)} className="rounded-full border border-white/10 bg-slate-950/40 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10">
-                  {t("close")}
+                <button
+                  type="button"
+                  onClick={() => setShowTermsModal(false)}
+                  className="absolute right-4 top-4 z-10 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-slate-950/40 text-xl font-semibold text-white transition hover:bg-white/10 sm:right-6 sm:top-6"
+                  aria-label={t("close")}
+                >
+                  &times;
                 </button>
               </div>
             </div>
-            <div className="max-h-[70vh] space-y-3 overflow-y-auto p-6 pr-4 text-sm leading-7 text-slate-300">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 pr-2 text-sm leading-7 text-slate-300 sm:p-6 sm:pr-4">
               {[
                 {
                   id: 1,
