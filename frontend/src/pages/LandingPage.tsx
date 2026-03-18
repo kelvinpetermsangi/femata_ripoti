@@ -87,7 +87,6 @@ const LandingPage = () => {
   const [pendingPath, setPendingPath] = useState<string | null>(null);
   const [pendingState, setPendingState] = useState<Record<string, string> | undefined>(undefined);
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
-  const [installMessage, setInstallMessage] = useState("");
   const [isInstalled, setIsInstalled] = useState(false);
 
   const scrollToTop = () => {
@@ -170,12 +169,10 @@ const LandingPage = () => {
     const onBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setInstallPromptEvent(event as BeforeInstallPromptEvent);
-      setInstallMessage("");
     };
 
     const onAppInstalled = () => {
       setInstallPromptEvent(null);
-      setInstallMessage("App installed.");
       setIsInstalled(true);
     };
 
@@ -356,29 +353,14 @@ const LandingPage = () => {
   const handleInstallApp = async () => {
     if (isStandaloneInstall()) {
       setIsInstalled(true);
-      setInstallMessage("App already installed.");
       return;
     }
 
-    if (installPromptEvent) {
-      await installPromptEvent.prompt();
-      const choice = await installPromptEvent.userChoice.catch(() => null);
-      setInstallPromptEvent(null);
-      setInstallMessage(
-        choice?.outcome === "accepted"
-          ? "Installing app..."
-          : iosInstallInstructions()
-            ? "Open in Safari > Share > Add to Home Screen"
-            : "Use your browser menu and choose Install App or Add to Home Screen.",
-      );
-      return;
-    }
+    if (!installPromptEvent) return;
 
-    setInstallMessage(
-      iosInstallInstructions()
-        ? "Open in Safari > Share > Add to Home Screen"
-        : "Use your browser menu and choose Install App or Add to Home Screen.",
-    );
+    await installPromptEvent.prompt();
+    await installPromptEvent.userChoice.catch(() => null);
+    setInstallPromptEvent(null);
   };
 
   return (
@@ -399,13 +381,13 @@ const LandingPage = () => {
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-2">
-              {!isInstalled && (
+              {!isInstalled && installPromptEvent && (
                 <button
                   type="button"
                   onClick={() => void handleInstallApp()}
                   className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-2 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-400/15"
                 >
-                  {installPromptEvent ? "Install App" : "How to Install"}
+                  Install App
                 </button>
               )}
               <button
@@ -442,9 +424,9 @@ const LandingPage = () => {
                 <span className="text-cyan-200/80">&#9662;</span>
               </button>
             </div>
-            {!isInstalled && installMessage ? (
+            {!isInstalled && !installPromptEvent && iosInstallInstructions() ? (
               <div className="w-full rounded-2xl border border-emerald-300/15 bg-emerald-400/10 px-4 py-3 text-right text-xs font-medium text-emerald-100">
-                {installMessage}
+                {"Open in Safari > Share > Add to Home Screen"}
               </div>
             ) : null}
           </div>

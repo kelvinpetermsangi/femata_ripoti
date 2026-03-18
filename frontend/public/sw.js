@@ -1,5 +1,12 @@
 const CACHE_NAME = "femata-ripoti-shell-v1";
-const APP_SHELL = ["/", "/index.html", "/manifest.json", "/femata-logo.jpeg"];
+const APP_SHELL = [
+  "/",
+  "/index.html",
+  "/manifest.json",
+  "/femata-logo.jpeg",
+  "/icons/icon-192x192.png",
+  "/icons/icon-512x512.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
