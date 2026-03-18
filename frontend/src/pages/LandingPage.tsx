@@ -88,6 +88,9 @@ const LandingPage = () => {
   const [pendingState, setPendingState] = useState<Record<string, string> | undefined>(undefined);
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalling, setIsInstalling] = useState(false);
+  const [installProgress, setInstallProgress] = useState(0);
+  const [installStatusText, setInstallStatusText] = useState("");
 
   const scrollToTop = () => {
     if (typeof window === "undefined") return;
@@ -169,11 +172,17 @@ const LandingPage = () => {
     const onBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setInstallPromptEvent(event as BeforeInstallPromptEvent);
+      setInstallStatusText("");
+      setInstallProgress(0);
+      setIsInstalling(false);
     };
 
     const onAppInstalled = () => {
       setInstallPromptEvent(null);
       setIsInstalled(true);
+      setInstallProgress(100);
+      setIsInstalling(false);
+      setInstallStatusText("Installed. Check your Home Screen or app drawer for FEMATA Ripoti.");
     };
 
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener);
@@ -353,14 +362,36 @@ const LandingPage = () => {
   const handleInstallApp = async () => {
     if (isStandaloneInstall()) {
       setIsInstalled(true);
+      setInstallProgress(100);
+      setInstallStatusText("Already installed. You can open FEMATA Ripoti from your apps.");
       return;
     }
 
     if (!installPromptEvent) return;
 
-    await installPromptEvent.prompt();
-    await installPromptEvent.userChoice.catch(() => null);
-    setInstallPromptEvent(null);
+    setIsInstalling(true);
+    setInstallProgress(5);
+    setInstallStatusText("Preparing install...");
+
+    const progressTimer = window.setInterval(() => {
+      setInstallProgress((current) => Math.min(current + 7, 90));
+    }, 140);
+
+    try {
+      await installPromptEvent.prompt();
+      const choice = await installPromptEvent.userChoice.catch(() => null);
+      if (choice?.outcome === "accepted") {
+        setInstallProgress(100);
+        setInstallStatusText("Finishing install...");
+      } else {
+        setInstallProgress(0);
+        setInstallStatusText("Install canceled.");
+      }
+    } finally {
+      window.clearInterval(progressTimer);
+      setInstallPromptEvent(null);
+      window.setTimeout(() => setIsInstalling(false), 700);
+    }
   };
 
   return (
@@ -385,9 +416,10 @@ const LandingPage = () => {
                 <button
                   type="button"
                   onClick={() => void handleInstallApp()}
-                  className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-2 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-400/15"
+                  disabled={isInstalling}
+                  className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-2 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-400/15 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Install App
+                  {isInstalling ? "Installing..." : "Install App"}
                 </button>
               )}
               <button
@@ -424,9 +456,24 @@ const LandingPage = () => {
                 <span className="text-cyan-200/80">&#9662;</span>
               </button>
             </div>
-            {!isInstalled && !installPromptEvent && iosInstallInstructions() ? (
+            {(isInstalling || installStatusText || (!isInstalled && !installPromptEvent && iosInstallInstructions())) ? (
               <div className="w-full rounded-2xl border border-emerald-300/15 bg-emerald-400/10 px-4 py-3 text-right text-xs font-medium text-emerald-100">
-                {"Open in Safari > Share > Add to Home Screen"}
+                {isInstalling ? (
+                  <div className="space-y-2">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-100/90">
+                      {installStatusText}
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-900/40">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-emerald-300 to-emerald-500 transition-all duration-200"
+                        style={{ width: `${installProgress}%` }}
+                      />
+                    </div>
+                    <div className="text-[11px] text-emerald-100/90">{installProgress}%</div>
+                  </div>
+                ) : (
+                  installStatusText || "Open in Safari > Share > Add to Home Screen"
+                )}
               </div>
             ) : null}
           </div>

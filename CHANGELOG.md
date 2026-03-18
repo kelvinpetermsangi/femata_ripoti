@@ -2,6 +2,19 @@
 
 All notable changes to this repository are documented in this file.
 
+## [0.8.2] - 2026-03-18
+
+### Added
+- Visible install progress experience on landing page (`0-100%` progress bar style) when PWA install is triggered.
+- Post-install guidance text so users know to find FEMATA Ripoti on Home Screen/app drawer.
+- Grouped chat FAQ selector with expandable/collapsible behavior to support more FAQs without overcrowding the chat UI.
+
+### Changed
+- Mobile chat modal layout now uses more usable viewport height and compact footer behavior for better Android/iOS UX.
+
+### Deployment
+- Released and deployed to VPS for HTTPS domain testing.
+
 ## [0.8.1] - 2026-03-18
 
 ### Fixed

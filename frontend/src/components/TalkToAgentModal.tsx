@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supportedLanguages } from '../i18n';
 import { usePublicGuidanceChat, type PublicChatState } from '../lib/publicGuidanceChat';
@@ -60,6 +60,7 @@ const TalkToAgentModal = ({
 
   const languageLabel =
     supportedLanguages.find((language) => language.code === currentLanguage)?.label ?? currentLanguage;
+  const [faqOpen, setFaqOpen] = useState(false);
 
   const handleSend = () => {
     if (isLoading || !input.trim()) return;
@@ -127,20 +128,26 @@ const TalkToAgentModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-slate-950/80 px-3 py-2 backdrop-blur-sm sm:px-4 sm:py-4">
-      <div className="femata-popup-shell flex h-[min(calc(100vh-1rem),46rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[28px] border border-cyan-300/20 bg-slate-900 shadow-2xl">
-        <div className="shrink-0 border-b border-white/10 px-4 py-4 sm:px-5 sm:py-5">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden bg-slate-950/80 px-2 py-2 backdrop-blur-sm sm:items-center sm:px-4 sm:py-4"
+      style={{
+        paddingTop: 'max(0.5rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))',
+      }}
+    >
+      <div className="femata-popup-shell flex h-[calc(100dvh-1rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[22px] border border-cyan-300/20 bg-slate-900 shadow-2xl sm:h-[min(calc(100dvh-2rem),46rem)] sm:rounded-[28px]">
+        <div className="shrink-0 border-b border-white/10 px-3 py-3 sm:px-5 sm:py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-400 p-1">
+                <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-400 p-1 sm:h-14 sm:w-14">
                   <img src="/femata-logo.jpeg" alt={t('logoAlt')} className="h-full w-full rounded-[14px] object-cover" />
                 </div>
                 <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-slate-900 bg-emerald-400 shadow-[0_0_20px_rgba(74,222,128,0.6)]" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white sm:text-2xl">{t('chatModalTitle', 'Talk to FEMATA Agent')}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
+                <h3 className="text-lg font-bold text-white sm:text-2xl">{t('chatModalTitle', 'Talk to FEMATA Agent')}</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-300 sm:mt-2">
                   {t('chatModalDesc', 'Ask questions about mining safety, reporting process, or get guidance in your preferred language.')}
                 </p>
               </div>
@@ -156,7 +163,7 @@ const TalkToAgentModal = ({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 px-4 py-4 sm:px-5">
+        <div className="min-h-0 flex-1 px-3 py-3 sm:px-5 sm:py-4">
           <div
             ref={messageContainerRef}
             className="chat-message-container femata-popup-content h-full overflow-y-auto overscroll-contain pr-1"
@@ -246,7 +253,7 @@ const TalkToAgentModal = ({
           </div>
         </div>
 
-        <div className="shrink-0 border-t border-white/10 bg-slate-900/95 px-4 py-4 sm:px-5">
+        <div className="shrink-0 border-t border-white/10 bg-slate-900/95 px-3 py-3 sm:px-5 sm:py-4">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="text-xs text-slate-400">
@@ -259,6 +266,13 @@ const TalkToAgentModal = ({
                 </div>
                 <button
                   type="button"
+                  onClick={() => setFaqOpen((open) => !open)}
+                  className="rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1.5 text-[11px] font-semibold text-cyan-100 transition hover:bg-cyan-400/15"
+                >
+                  {faqOpen ? t('chatHideFaq', 'Hide FAQ') : t('chatShowFaq', 'FAQ')}
+                </button>
+                <button
+                  type="button"
                   onClick={clearConversation}
                   className="rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1.5 text-[11px] font-semibold text-cyan-100 transition hover:bg-cyan-400/15"
                 >
@@ -267,22 +281,27 @@ const TalkToAgentModal = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-              {quickPrompts.map((prompt) => (
-                <button
-                  key={prompt.topic}
-                  type="button"
-                  onClick={() => {
-                    void sendMessage(prompt.label, prompt.topic);
-                  }}
-                  className="rounded-xl border border-cyan-300/20 bg-cyan-400/10 px-3 py-2 text-xs text-cyan-100 transition hover:bg-cyan-400/20"
-                >
-                  {prompt.label}
-                </button>
-              ))}
-            </div>
+            {faqOpen ? (
+              <div className="rounded-2xl border border-cyan-300/20 bg-cyan-400/10 p-2">
+                <div className="femata-quick-prompts flex gap-2 overflow-x-auto pb-1 lg:grid lg:grid-cols-2 lg:overflow-visible lg:pb-0">
+                  {quickPrompts.map((prompt) => (
+                    <button
+                      key={prompt.topic}
+                      type="button"
+                      onClick={() => {
+                        setFaqOpen(false);
+                        void sendMessage(prompt.label, prompt.topic);
+                      }}
+                      className="min-w-[11rem] shrink-0 rounded-xl border border-cyan-300/20 bg-slate-900/70 px-3 py-2 text-xs text-cyan-100 transition hover:bg-cyan-400/20 lg:min-w-0"
+                    >
+                      {prompt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
-            <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="flex items-center gap-2">
               <div className="flex-1">
                 <input
                   type="text"
@@ -298,7 +317,7 @@ const TalkToAgentModal = ({
                 type="button"
                 onClick={handleSend}
                 disabled={isLoading || !input.trim()}
-                className="rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-6 py-3 font-semibold text-white transition hover:opacity-90 disabled:opacity-50 sm:self-auto"
+                className="shrink-0 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-4 py-3 font-semibold text-white transition hover:opacity-90 disabled:opacity-50 sm:px-6"
               >
                 {isLoading ? (
                   <span className="flex items-center gap-2">

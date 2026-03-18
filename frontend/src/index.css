@@ -6,6 +6,24 @@
   scroll-behavior: smooth;
 }
 
+.femata-quick-prompts {
+  scrollbar-width: thin;
+}
+
+.femata-quick-prompts::-webkit-scrollbar {
+  height: 6px;
+}
+
+.femata-quick-prompts::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.2);
+  border-radius: 999px;
+}
+
+.femata-quick-prompts::-webkit-scrollbar-thumb {
+  background: rgba(45, 212, 191, 0.8);
+  border-radius: 999px;
+}
+
 html.femata-popup-open,
 body.femata-popup-open,
 #root.femata-popup-scroll-lock,

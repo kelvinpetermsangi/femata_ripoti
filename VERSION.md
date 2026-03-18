@@ -1,6 +1,6 @@
 # Version Tracking
 
-- Current version: `0.8.1`
+- Current version: `0.8.2`
 - Release date: `2026-03-18`
 - Release commit: `pending-latest-commit`
 - Frontend package version source: `frontend/package.json`
