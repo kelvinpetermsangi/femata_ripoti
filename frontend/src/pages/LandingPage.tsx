@@ -4,10 +4,16 @@ import { useTranslation } from "react-i18next";
 import { changeAppLanguage, supportedLanguages, type SupportedLanguageCode, useEnabledSupportedLanguages } from "../i18n";
 import { normalizeLocation as normalize, regionMunicipalityMap, regions } from "../data/tanzaniaLocations";
 import { API_BASE } from "../lib/apiBase";
+import TalkToAgentModal from "../components/TalkToAgentModal";
 
 // `TranslationShape` type removed â€” translations are now provided from `src/i18n.ts`.
 
 type LanguageItem = (typeof supportedLanguages)[number];
+
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
 
 const rtlLanguages = new Set(["ar"]);
 const trustBadgeTranslations: Record<string, string[]> = {
@@ -23,6 +29,15 @@ const trustBadgeTranslations: Record<string, string[]> = {
   ko: ["보안", "암호화", "24/7", "익명", "신뢰"],
   th: ["ปลอดภัย", "เข้ารหัส", "24/7", "ไม่ระบุตัวตน", "เชื่อถือได้"],
 };
+
+const isStandaloneInstall = () => {
+  if (typeof window === "undefined") return false;
+  const nav = navigator as Navigator & { standalone?: boolean };
+  return window.matchMedia("(display-mode: standalone)").matches || nav.standalone === true;
+};
+
+const iosInstallInstructions = () =>
+  typeof navigator !== "undefined" && /iphone|ipad|ipod/i.test(navigator.userAgent);
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -50,6 +65,8 @@ const LandingPage = () => {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showServicesDisclaimerModal, setShowServicesDisclaimerModal] = useState(false);
+  const [showTalkToAgent, setShowTalkToAgent] = useState(false);
+  const [isLandingScrolling, setIsLandingScrolling] = useState(false);
   const [activePrivacySection, setActivePrivacySection] = useState(1);
   const [activeTermsSection, setActiveTermsSection] = useState(1);
   const [activeServicesDisclaimerSection, setActiveServicesDisclaimerSection] = useState(1);
@@ -69,6 +86,9 @@ const LandingPage = () => {
   const [secureTextIndex, setSecureTextIndex] = useState(0);
   const [pendingPath, setPendingPath] = useState<string | null>(null);
   const [pendingState, setPendingState] = useState<Record<string, string> | undefined>(undefined);
+  const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
+  const [installMessage, setInstallMessage] = useState("");
+  const [isInstalled, setIsInstalled] = useState(false);
 
   const scrollToTop = () => {
     if (typeof window === "undefined") return;
@@ -102,6 +122,8 @@ const LandingPage = () => {
     enabledLanguages.find((item: LanguageItem) => item.code === currentLanguage)
     ?? supportedLanguages.find((item: LanguageItem) => item.code === currentLanguage);
   const selectedZone = selectedRegion ? zoneLookup[selectedRegion] || "" : "";
+  const landingChatState = showSecureLoader ? "Loader" : isLandingScrolling ? "Scrolling" : "Chat";
+  const landingChatCity = selectedMunicipality || selectedRegion || "Dar es Salaam";
 
   const filteredLanguages = useMemo(() => {
     const query = normalize(languageQuery);
@@ -141,6 +163,32 @@ const LandingPage = () => {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    setIsInstalled(isStandaloneInstall());
+
+    const onBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPromptEvent(event as BeforeInstallPromptEvent);
+      setInstallMessage("");
+    };
+
+    const onAppInstalled = () => {
+      setInstallPromptEvent(null);
+      setInstallMessage("App installed.");
+      setIsInstalled(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener);
+    window.addEventListener("appinstalled", onAppInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener);
+      window.removeEventListener("appinstalled", onAppInstalled);
+    };
+  }, []);
+
+  useEffect(() => {
     if (searchParams.get("openReportWizard") !== "1") return;
 
     setShowReportWizard(true);
@@ -161,6 +209,33 @@ const LandingPage = () => {
     const timeout = window.setTimeout(() => setShowLanguageToast(false), 2000);
     return () => window.clearTimeout(timeout);
   }, [showLanguageToast]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setShowTalkToAgent(true);
+    }, 2500);
+
+    return () => window.clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
+    let scrollTimeout = 0;
+
+    const onScroll = () => {
+      if (window.scrollY <= 0) return;
+      setIsLandingScrolling(true);
+      window.clearTimeout(scrollTimeout);
+      scrollTimeout = window.setTimeout(() => {
+        setIsLandingScrolling(false);
+      }, 900);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.clearTimeout(scrollTimeout);
+    };
+  }, []);
 
   useEffect(() => {
     if (!showSecureLoader || !pendingPath) return;
@@ -286,6 +361,34 @@ const LandingPage = () => {
     navigate(`/track?reference=${encodeURIComponent(trimmedRef)}`);
   };
 
+  const handleInstallApp = async () => {
+    if (isStandaloneInstall()) {
+      setIsInstalled(true);
+      setInstallMessage("App already installed.");
+      return;
+    }
+
+    if (installPromptEvent) {
+      await installPromptEvent.prompt();
+      const choice = await installPromptEvent.userChoice.catch(() => null);
+      setInstallPromptEvent(null);
+      setInstallMessage(
+        choice?.outcome === "accepted"
+          ? "Installing app..."
+          : iosInstallInstructions()
+            ? "Open in Safari > Share > Add to Home Screen"
+            : "Use your browser menu and choose Install App or Add to Home Screen.",
+      );
+      return;
+    }
+
+    setInstallMessage(
+      iosInstallInstructions()
+        ? "Open in Safari > Share > Add to Home Screen"
+        : "Use your browser menu and choose Install App or Add to Home Screen.",
+    );
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <div className="relative overflow-hidden">
@@ -304,6 +407,15 @@ const LandingPage = () => {
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-2">
+              {!isInstalled && (
+                <button
+                  type="button"
+                  onClick={() => void handleInstallApp()}
+                  className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-2 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-400/15"
+                >
+                  {installPromptEvent ? "Install App" : "How to Install"}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => startSecureNavigation(adminLoginPath)}
@@ -338,6 +450,11 @@ const LandingPage = () => {
                 <span className="text-cyan-200/80">&#9662;</span>
               </button>
             </div>
+            {!isInstalled && installMessage ? (
+              <div className="w-full rounded-2xl border border-emerald-300/15 bg-emerald-400/10 px-4 py-3 text-right text-xs font-medium text-emerald-100">
+                {installMessage}
+              </div>
+            ) : null}
           </div>
 
           <div className="grid gap-10 py-10 lg:grid-cols-2 lg:items-center lg:py-16">
@@ -421,26 +538,6 @@ const LandingPage = () => {
                       </div>
                     </button>
 
-                    <button type="button" onClick={() => startSecureNavigation("/chat")} className="group block w-full rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left transition hover:border-emerald-300 hover:bg-white hover:shadow-md">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-slate-900">{t("aiTitle")}</h3>
-                          <p className="mt-1 text-sm leading-6 text-slate-600">{t("aiDesc")}</p>
-                        </div>
-                        <span className="text-emerald-700 transition group-hover:translate-x-1">&rarr;</span>
-                      </div>
-                    </button>
-
-                    <button type="button" onClick={() => startSecureNavigation(adminLoginPath)} className="group block w-full rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left transition hover:border-amber-300 hover:bg-white hover:shadow-md">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-slate-900">{t("leadershipTitle")}</h3>
-                          <p className="mt-1 text-sm leading-6 text-slate-600">{t("leadershipDesc")}</p>
-                          <p className="mt-3 text-sm font-medium text-emerald-700">{t("leadershipPrivacy")}</p>
-                        </div>
-                        <span className="text-amber-700 transition group-hover:translate-x-1">&rarr;</span>
-                      </div>
-                    </button>
                   </div>
 
                   <button
@@ -551,8 +648,8 @@ const LandingPage = () => {
           <div className="w-full max-w-3xl rounded-[30px] border border-cyan-300/20 bg-slate-900 p-6 shadow-2xl">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-xl font-bold text-white">Choose language</h3>
-                <p className="mt-2 text-sm text-slate-300">Pick the language you want to use across the landing page.</p>
+                <h3 className="text-xl font-bold text-white">{t("languageModalTitle")}</h3>
+                <p className="mt-2 text-sm text-slate-300">{t("languageModalDesc")}</p>
               </div>
               <button
                 type="button"
@@ -565,18 +662,18 @@ const LandingPage = () => {
 
             <div className="mb-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
               <label className="block">
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Search</span>
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{t("languageSearchLabel")}</span>
                 <input
                   type="text"
                   value={languageQuery}
                   onChange={(e) => setLanguageQuery(e.target.value)}
-                  placeholder="Search by native or romanized name..."
+                  placeholder={t("languageSearchPlaceholder")}
                   className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-slate-400 outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/20"
                 />
               </label>
               <div className="rounded-2xl border border-cyan-300/20 bg-cyan-400/10 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">Current</p>
-                <p className="mt-2 text-sm font-semibold text-white">{currentLanguageOption?.label ?? "English"}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">{t("languageCurrentLabel")}</p>
+                <p className="mt-2 text-sm font-semibold text-white">{currentLanguageOption?.label ?? t("languageFallbackName")}</p>
               </div>
             </div>
 
@@ -598,14 +695,14 @@ const LandingPage = () => {
                       <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">{item.displayName}</p>
                     </div>
                     {currentLanguage === item.code && (
-                      <span className="rounded-full bg-cyan-300/15 px-2 py-1 text-xs font-semibold text-cyan-200">Selected</span>
+                      <span className="rounded-full bg-cyan-300/15 px-2 py-1 text-xs font-semibold text-cyan-200">{t("languageSelected")}</span>
                     )}
                   </div>
                 </button>
               ))}
               {filteredLanguages.length === 0 && (
                 <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-6 text-sm text-slate-400 sm:col-span-2">
-                  No languages match that search yet.
+                  {t("languageEmptyState")}
                 </div>
               )}
             </div>
@@ -789,7 +886,7 @@ const LandingPage = () => {
                   </p>
                   {selectedZone ? (
                     <p>
-                      <span className="font-semibold text-white">Zone</span> {selectedZone}
+                      <span className="font-semibold text-white">{t("zoneLabel")}</span> {selectedZone}
                     </p>
                   ) : null}
                 </div>
@@ -848,7 +945,7 @@ const LandingPage = () => {
                   onClick={handleTrackLookup}
                   className="inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-300 via-sky-400 to-cyan-500 px-5 py-3 font-semibold text-slate-950 transition hover:opacity-95 disabled:opacity-70"
                 >
-                  Login
+                  {t("trackAction")}
                 </button>
                 <button type="button" onClick={() => setShowTrackModal(false)} className="inline-flex w-full items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-white transition hover:bg-white/10">
                   {t("close")}
@@ -866,7 +963,7 @@ const LandingPage = () => {
             <div className="border-b border-white/10 bg-[linear-gradient(135deg,rgba(34,211,238,0.12),rgba(251,191,36,0.08),rgba(15,23,42,0.94))] p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">Policy</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">{t("privacyBadge")}</p>
                   <h3 className="mt-2 text-2xl font-bold text-white">{t("privacyTitle")}</h3>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">{t('privacy_para1')}</p>
                 </div>
@@ -919,11 +1016,11 @@ const LandingPage = () => {
                     className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
                   >
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Section {section.id}</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{t("documentSectionLabel", { num: section.id, defaultValue: `Section ${section.id}` })}</p>
                       <h4 className="mt-1 text-lg font-semibold text-white">{section.title}</h4>
                     </div>
                     <span className="rounded-full border border-white/10 bg-slate-950/40 px-3 py-1 text-xs font-semibold text-slate-300">
-                      {activePrivacySection === section.id ? "Open" : "View"}
+                      {activePrivacySection === section.id ? t("documentOpen") : t("documentView")}
                     </span>
                   </button>
                   {activePrivacySection === section.id && (
@@ -942,7 +1039,7 @@ const LandingPage = () => {
             <div className="border-b border-white/10 bg-[linear-gradient(135deg,rgba(251,191,36,0.12),rgba(34,197,94,0.08),rgba(15,23,42,0.94))] p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">Guidelines</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">{t("termsBadge")}</p>
                   <h3 className="mt-2 text-2xl font-bold text-white">{t("termsTitle")}</h3>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">{t('terms_para1')}</p>
                 </div>
@@ -986,11 +1083,11 @@ const LandingPage = () => {
                     className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
                   >
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Section {section.id}</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{t("documentSectionLabel", { num: section.id, defaultValue: `Section ${section.id}` })}</p>
                       <h4 className="mt-1 text-lg font-semibold text-white">{section.title}</h4>
                     </div>
                     <span className="rounded-full border border-white/10 bg-slate-950/40 px-3 py-1 text-xs font-semibold text-slate-300">
-                      {activeTermsSection === section.id ? "Open" : "View"}
+                      {activeTermsSection === section.id ? t("documentOpen") : t("documentView")}
                     </span>
                   </button>
                   {activeTermsSection === section.id && (
@@ -1009,7 +1106,7 @@ const LandingPage = () => {
             <div className="border-b border-white/10 bg-[linear-gradient(135deg,rgba(34,197,94,0.12),rgba(251,191,36,0.08),rgba(15,23,42,0.94))] p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-200">Service Notice</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-200">{t("servicesDisclaimerBadge", "Service Notice")}</p>
                   <h3 className="mt-2 text-2xl font-bold text-white">{t("servicesDisclaimerTitle")}</h3>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">{t('servicesDisclaimerIntro')}</p>
                 </div>
@@ -1048,11 +1145,11 @@ const LandingPage = () => {
                     className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
                   >
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Section {section.id}</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{t("documentSectionLabel", { num: section.id, defaultValue: `Section ${section.id}` })}</p>
                       <h4 className="mt-1 text-lg font-semibold text-white">{section.title}</h4>
                     </div>
                     <span className="rounded-full border border-white/10 bg-slate-950/40 px-3 py-1 text-xs font-semibold text-slate-300">
-                      {activeServicesDisclaimerSection === section.id ? "Open" : "View"}
+                      {activeServicesDisclaimerSection === section.id ? t("documentOpen") : t("documentView")}
                     </span>
                   </button>
                   {activeServicesDisclaimerSection === section.id && (
@@ -1148,6 +1245,33 @@ const LandingPage = () => {
           {t("languageChanged")} {(enabledLanguages.find((item) => item.code === currentLanguage) ?? supportedLanguages.find((item) => item.code === currentLanguage))?.label}
         </div>
       )}
+
+      <div
+        id="femata-chat-widget"
+        className={`fixed bottom-5 right-5 z-40 transition-all duration-300 ${showTalkToAgent ? "open" : ""}`}
+      >
+        <button
+          type="button"
+          onClick={() => setShowTalkToAgent((prev) => !prev)}
+          className={`inline-flex items-center gap-3 rounded-full border px-4 py-3 text-sm font-semibold shadow-2xl backdrop-blur-xl transition ${
+            showTalkToAgent
+              ? "border-cyan-300/30 bg-cyan-400/15 text-cyan-100"
+              : "border-emerald-300/20 bg-slate-900/90 text-white hover:bg-slate-900"
+          }`}
+        >
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-cyan-400 text-white">
+            AI
+          </span>
+          <span>{showTalkToAgent ? t("chatWidgetClose", "Close Chat") : t("chatWidgetButton", "Talk to FEMATA Agent")}</span>
+        </button>
+      </div>
+
+      <TalkToAgentModal
+        isOpen={showTalkToAgent}
+        onClose={() => setShowTalkToAgent(false)}
+        currentState={landingChatState}
+        city={landingChatCity}
+      />
     </div>
   );
 };

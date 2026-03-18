@@ -1,21 +1,26 @@
 {
+  "id": "/",
   "name": "FEMATA Ripoti",
-  "short_name": "FEMATA Ripoti",
+  "short_name": "FEMATA",
   "description": "Jukwaa salama la kuripoti matukio ya madini kwa faragha kamili",
+  "lang": "sw",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#f5f5f5",
-  "theme_color": "#004d40",
+  "background_color": "#020617",
+  "theme_color": "#0f766e",
   "icons": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
+      "src": "/femata-logo.jpeg",
+      "sizes": "750x750",
+      "type": "image/jpeg",
+      "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "/femata-logo.jpeg",
+      "sizes": "750x750",
+      "type": "image/jpeg",
+      "purpose": "maskable"
     }
   ]
 }

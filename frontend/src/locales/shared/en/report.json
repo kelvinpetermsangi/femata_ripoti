@@ -315,5 +315,6 @@
   "reportQuestiongeneral3Option2": "Case review",
   "reportQuestiongeneral3Option3": "Mediation",
   "reportQuestiongeneral3Option4": "Escalation",
-  "reportQuestiongeneral3Option5": "Unsure"
+  "reportQuestiongeneral3Option5": "Unsure",
+  "reportZoneDerived": "Zone is derived automatically from the selected region."
 }

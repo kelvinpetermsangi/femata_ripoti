@@ -1,3 +1,66 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.chat-message-container {
+  scroll-behavior: smooth;
+}
+
+html.femata-popup-open,
+body.femata-popup-open,
+#root.femata-popup-scroll-lock,
+.femata-popup-shell,
+.femata-popup-content,
+.chat-message-container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(103, 232, 249, 0.78) rgba(15, 23, 42, 0.18);
+}
+
+html.femata-popup-open::-webkit-scrollbar,
+body.femata-popup-open::-webkit-scrollbar,
+#root.femata-popup-scroll-lock::-webkit-scrollbar,
+.femata-popup-shell::-webkit-scrollbar,
+.femata-popup-content::-webkit-scrollbar,
+.chat-message-container::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html.femata-popup-open::-webkit-scrollbar-track,
+body.femata-popup-open::-webkit-scrollbar-track,
+#root.femata-popup-scroll-lock::-webkit-scrollbar-track,
+.femata-popup-shell::-webkit-scrollbar-track,
+.femata-popup-content::-webkit-scrollbar-track,
+.chat-message-container::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.12), rgba(15, 23, 42, 0.28));
+  border-radius: 999px;
+}
+
+html.femata-popup-open::-webkit-scrollbar-thumb,
+body.femata-popup-open::-webkit-scrollbar-thumb,
+#root.femata-popup-scroll-lock::-webkit-scrollbar-thumb,
+.femata-popup-shell::-webkit-scrollbar-thumb,
+.femata-popup-content::-webkit-scrollbar-thumb,
+.chat-message-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(45, 212, 191, 0.95), rgba(34, 211, 238, 0.68));
+  border-radius: 999px;
+  border: 2px solid rgba(15, 23, 42, 0.18);
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.18);
+}
+
+html.femata-popup-open::-webkit-scrollbar-thumb:hover,
+body.femata-popup-open::-webkit-scrollbar-thumb:hover,
+#root.femata-popup-scroll-lock::-webkit-scrollbar-thumb:hover,
+.femata-popup-shell::-webkit-scrollbar-thumb:hover,
+.femata-popup-content::-webkit-scrollbar-thumb:hover,
+.chat-message-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(94, 234, 212, 0.98), rgba(56, 189, 248, 0.82));
+}
+
+#femata-chat-widget {
+  transform: translateY(0);
+}
+
+#femata-chat-widget.open {
+  transform: translateY(-4px);
+}

@@ -16,6 +16,7 @@ export default defineConfig({
     proxy: {
       '/health': backendTarget,
       '/meta': backendTarget,
+      '/api/ai-chat': backendTarget,
       '/reports': backendTarget,
       '/track-report': backendTarget,
       '/ai-chat': backendTarget,

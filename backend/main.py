@@ -1761,8 +1761,9 @@ def ensure_default_admin_user() -> None:
                     is_active,
                     is_system,
                     created_at,
-                    updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    updated_at,
+                    last_login_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     uuid.uuid4().hex,
@@ -1793,6 +1794,7 @@ def ensure_default_admin_user() -> None:
                     1,
                     now,
                     now,
+                    None,
                 ),
             )
         conn.commit()
@@ -1896,9 +1898,10 @@ def create_admin_user(
                 organization_logo_filename,
                 is_active,
                 is_system,
-                created_at,
-                updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    created_at,
+                    updated_at,
+                    last_login_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 uuid.uuid4().hex,
@@ -1929,6 +1932,7 @@ def create_admin_user(
                 0,
                 now,
                 now,
+                None,
             ),
         )
         conn.commit()
@@ -2721,6 +2725,274 @@ def build_michelle_system_prompt(
         "Known FEMATA operational knowledge:\n"
         f"{topic_summary}"
     )
+
+
+GUIDANCE_GREETING_LINES: dict[str, dict[str, str]] = {
+    "en": {
+        "morning": "Good morning",
+        "afternoon": "Good afternoon",
+        "evening": "Good evening",
+    },
+    "sw": {
+        "morning": "Habari za asubuhi",
+        "afternoon": "Habari za mchana",
+        "evening": "Habari za jioni",
+    },
+}
+
+
+GUIDANCE_LOCALIZED_LINES: dict[str, dict[str, str]] = {
+    "en": {
+        "intro": "I'm Michelle, and Melvin joins when a why or how question needs deeper reasoning.",
+        "question": "How can I help you report safely today?",
+        "scrolling_intro": "I see you're reading our safety commitments.",
+        "scrolling_question": "Would you like me to summarize how we keep your identity completely hidden?",
+        "loader": "Checking secure connections...",
+        "fallback": "I can explain anonymous reporting, privacy protections, and reference numbers.",
+        "reporting_topic": "I can guide you through filing a complaint step by step.",
+        "privacy_topic": "I can explain how the platform protects your identity and keeps reports confidential.",
+        "reference_topic": "I can explain how the reference number helps you return and add new information.",
+    },
+    "sw": {
+        "intro": "Mimi ni Michelle, na Melvin hujiunga pale swali la kwa nini au jinsi linapohitaji uchambuzi wa kina.",
+        "question": "Ninawezaje kukusaidia kuripoti kwa usalama leo?",
+        "scrolling_intro": "Naona unasoma ahadi zetu za usalama.",
+        "scrolling_question": "Ungependa nikufupishie jinsi tunavyoficha utambulisho wako kikamilifu?",
+        "loader": "Ninakagua miunganisho salama...",
+        "fallback": "Naweza kueleza kuripoti kwa siri, ulinzi wa faragha, na nambari ya kumbukumbu.",
+        "reporting_topic": "Naweza kukuongoza hatua kwa hatua jinsi ya kuwasilisha malalamiko.",
+        "privacy_topic": "Naweza kueleza jinsi jukwaa linavyolinda utambulisho wako na kuweka ripoti kwa usiri.",
+        "reference_topic": "Naweza kueleza jinsi nambari ya kumbukumbu inavyokusaidia kurudi na kuongeza taarifa mpya.",
+    },
+}
+
+
+def normalize_guidance_state(value: Any) -> str:
+    state = clean_text(value) or "Chat"
+    return state if state in {"Chat", "Loader", "Scrolling"} else "Chat"
+
+
+def normalize_public_guidance_city(value: Any) -> str:
+    city = clean_text(value)
+    return city or "Dar es Salaam"
+
+
+def guidance_day_period_name(
+    time_text: str | None = None,
+    client_time_iso: str | None = None,
+    client_timezone: str | None = None,
+) -> str:
+    compact = clean_text(time_text)
+    if compact and ":" in compact:
+        hour_text = compact.split(":", 1)[0]
+        try:
+            hour = int(hour_text)
+        except ValueError:
+            hour = None
+        if hour is not None:
+            if 5 <= hour < 12:
+                return "morning"
+            if 12 <= hour < 17:
+                return "afternoon"
+            return "evening"
+
+    moment, _ = resolve_training_clock(client_time_iso, client_timezone)
+    period = training_day_period_name(moment)
+    return period if period in {"morning", "afternoon"} else "evening"
+
+
+def guidance_line(language_code: str, key: str) -> str:
+    bundle = GUIDANCE_LOCALIZED_LINES.get(language_code) or GUIDANCE_LOCALIZED_LINES["en"]
+    return bundle.get(key) or GUIDANCE_LOCALIZED_LINES["en"][key]
+
+
+def guidance_greeting_prefix(
+    language_code: str,
+    city: str,
+    time_text: str | None = None,
+    client_time_iso: str | None = None,
+    client_timezone: str | None = None,
+) -> str:
+    period = guidance_day_period_name(time_text, client_time_iso, client_timezone)
+    greetings = GUIDANCE_GREETING_LINES.get(language_code) or GUIDANCE_GREETING_LINES["en"]
+    greeting = greetings.get(period) or GUIDANCE_GREETING_LINES["en"][period]
+    return f"{greeting} | {city}"
+
+
+def guidance_topic_fallback(language_code: str, context_topic: str | None = None) -> str:
+    topic_text = (clean_text(context_topic) or "").lower()
+    if any(term in topic_text for term in ("reference", "kumbukumbu")):
+        return guidance_line(language_code, "reference_topic")
+    if any(term in topic_text for term in ("secure", "privacy", "anonymous", "usiri", "salama")):
+        return guidance_line(language_code, "privacy_topic")
+    if any(term in topic_text for term in ("report", "complaint", "register", "malalamiko", "kuripoti")):
+        return guidance_line(language_code, "reporting_topic")
+    return guidance_line(language_code, "fallback")
+
+
+def build_guidance_system_prompt(
+    preferred_language: str | None = None,
+    context_topic: str | None = None,
+    current_state: str | None = None,
+    city: str | None = None,
+    time_text: str | None = None,
+) -> str:
+    language_code = normalize_training_language_code(preferred_language)
+    language_name = TRAINING_LANGUAGE_NAMES.get(language_code, TRAINING_LANGUAGE_NAMES["en"])
+    guidance_state = normalize_guidance_state(current_state)
+    guidance_city = normalize_public_guidance_city(city)
+    guidance_time = clean_text(time_text) or "Unknown"
+    topic_line = f"The user is asking about {context_topic}." if context_topic else "The user wants help with the anonymous reporting platform."
+    return (
+        "# PERSONAS\n"
+        "* Michelle (Primary): Empathetic, warm front-line guide. Handles greetings, navigation, and the standard reporting flow. Never outputs walls of text.\n"
+        "* Melvin (Specialist): Technical reasoning engine. Michelle introduces Melvin seamlessly for complex why or how questions regarding engineering, law, or geospatial data.\n\n"
+        "# DYNAMIC VARIABLES (Injected)\n"
+        f"* Current_Time: {guidance_time}\n"
+        f"* Location: {guidance_city}\n"
+        f"* Active_Language: {language_code}\n"
+        f"* User_State: {guidance_state}\n\n"
+        "# RULES OF ENGAGEMENT\n"
+        f"1. On the first interaction, begin with the fully localized equivalent of \"Good Morning/Afternoon/Evening | {guidance_city}\". If User_State is Loader, the Loader rule overrides the greeting.\n"
+        "2. Never send more than 3 short sentences per turn. If User_State is Loader, keep the reply under 10 words.\n"
+        "3. Always end your turn with exactly one relevant question unless User_State is Loader.\n"
+        f"4. Strict Language Sync: You must communicate entirely in {language_name}. Do not default to English when another language is active.\n\n"
+        "# UI STATE AWARENESS\n"
+        '* If User_State = "Loader": Keep under 10 words (for example: "Checking secure connections...").\n'
+        '* If User_State = "Scrolling": After any required greeting, say the localized equivalent of: "I see you\'re reading our safety commitments. Would you like me to summarize how we keep your identity completely hidden?"\n\n'
+        "# TOPIC BOUNDARY\n"
+        "Explain how to register complaints, why the channel is secure, why reporting matters, and what protections or laws keep identity safe. "
+        "Remind the user that every complaint is handled confidentially and that the reference number must be kept safe so they can log back in and add new information. "
+        "Decline to answer anything outside anonymous reporting, and redirect those questions back to the report form. "
+        "Never mention source code, secret keys, administration, backend internals, or proprietary implementation details.\n\n"
+        f"{topic_line}"
+    )
+
+
+def guidance_fallback_reply(
+    language_code: str | None = None,
+    current_state: str | None = None,
+    city: str | None = None,
+    time_text: str | None = None,
+    client_time_iso: str | None = None,
+    client_timezone: str | None = None,
+    is_first_interaction: bool = False,
+    context_topic: str | None = None,
+) -> str:
+    resolved_language = normalize_training_language_code(language_code)
+    guidance_state = normalize_guidance_state(current_state)
+    guidance_city = normalize_public_guidance_city(city)
+
+    if guidance_state == "Loader":
+        return guidance_line(resolved_language, "loader")
+
+    if guidance_state == "Scrolling":
+        scrolling_reply = f"{guidance_line(resolved_language, 'scrolling_intro')} {guidance_line(resolved_language, 'scrolling_question')}"
+        if is_first_interaction:
+            return (
+                f"{guidance_greeting_prefix(resolved_language, guidance_city, time_text, client_time_iso, client_timezone)}. "
+                f"{scrolling_reply}"
+            )
+        return scrolling_reply
+
+    if is_first_interaction:
+        return (
+            f"{guidance_greeting_prefix(resolved_language, guidance_city, time_text, client_time_iso, client_timezone)}. "
+            f"{guidance_line(resolved_language, 'intro')} "
+            f"{guidance_line(resolved_language, 'question')}"
+        )
+
+    return f"{guidance_topic_fallback(resolved_language, context_topic)} {guidance_line(resolved_language, 'question')}"
+
+
+GUIDANCE_SUGGESTED_PROMPTS: dict[str, list[str]] = {
+    "en": [
+        "How do I file an anonymous complaint?",
+        "Why is my report confidential and how is it kept safe?",
+        "What happens after I submit a reference number?",
+        "Can I add new info to my report later?",
+    ],
+    "sw": [
+        "Ninawezaje kuwasilisha malalamiko ya siri?",
+        "Mbona ripoti yangu iko salama na isitajwe?",
+        "Nini kinatokea baada ya kunipa nambari ya kumbukumbu?",
+        "Ninaweza kuongeza taarifa mpya baadaye?",
+    ],
+}
+
+
+def call_deepseek_public_guidance(
+    message: str,
+    history: list[dict[str, Any]],
+    preferred_language: str | None = None,
+    context_topic: str | None = None,
+    current_state: str | None = None,
+    city: str | None = None,
+    time_text: str | None = None,
+    client_time_iso: str | None = None,
+    client_timezone: str | None = None,
+    is_first_interaction: bool = False,
+) -> str | None:
+    latest = clean_text(message) or ""
+    if (not latest and not is_first_interaction) or not michelle_should_use_deepseek():
+        return None
+
+    response_language = normalize_training_language_code(preferred_language)
+    prompt = build_guidance_system_prompt(
+        response_language,
+        context_topic,
+        current_state,
+        city,
+        time_text,
+    )
+    messages: list[dict[str, str]] = [{"role": "system", "content": prompt}]
+    cleaned_history: list[dict[str, str]] = []
+    for item in history[-6:]:
+        role = clean_text(item.get("role"))
+        content = clean_text(item.get("content"))
+        if role not in {"user", "assistant"} or not content:
+            continue
+        cleaned_history.append({"role": role, "content": content[:4000]})
+    if cleaned_history:
+        messages.extend(cleaned_history)
+    if latest:
+        if not cleaned_history or cleaned_history[-1]["role"] != "user" or cleaned_history[-1]["content"] != latest:
+            messages.append({"role": "user", "content": latest[:4000]})
+    elif is_first_interaction:
+        messages.append({"role": "user", "content": "Start the first interaction now."})
+    else:
+        return None
+
+    payload = {
+        "model": DEEPSEEK_CHAT_MODEL,
+        "messages": messages,
+        "temperature": 0.35,
+        "max_tokens": 220,
+        "stream": False,
+    }
+    request = urllib.request.Request(
+        f"{DEEPSEEK_BASE_URL}/chat/completions",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=DEEPSEEK_TIMEOUT_SECONDS) as response:
+            body = json.loads(response.read().decode("utf-8"))
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
+        return None
+
+    choices = body.get("choices") if isinstance(body, dict) else None
+    if not isinstance(choices, list) or not choices:
+        return None
+    message_payload = choices[0].get("message") if isinstance(choices[0], dict) else None
+    if not isinstance(message_payload, dict):
+        return None
+    reply = clean_text(message_payload.get("content"))
+    return reply or None
 
 
 def build_training_system_prompt(
@@ -4110,6 +4382,29 @@ class AdminTrainingChatPayload(BaseModel):
     client_timezone: str | None = Field(default=None, max_length=80)
 
 
+class PublicGuidanceHistoryItem(BaseModel):
+    role: str = Field(pattern="^(user|assistant)$")
+    content: str = Field(max_length=4000)
+
+
+class PublicGuidanceContextPayload(BaseModel):
+    topic: str | None = Field(default=None, max_length=120)
+    time: str | None = Field(default=None, max_length=20)
+    city: str | None = Field(default=None, max_length=120)
+    user_lang: str | None = Field(default=None, max_length=16)
+    current_state: str | None = Field(default="Chat", pattern="^(Chat|Loader|Scrolling)$")
+
+
+class PublicGuidancePayload(BaseModel):
+    message: str = Field(default="", max_length=4000)
+    history: list[PublicGuidanceHistoryItem] = Field(default_factory=list)
+    language: str | None = Field(default=None, max_length=16)
+    client_time_iso: str | None = Field(default=None, max_length=100)
+    client_timezone: str | None = Field(default=None, max_length=80)
+    is_first_interaction: bool = False
+    context: PublicGuidanceContextPayload = Field(default_factory=PublicGuidanceContextPayload)
+
+
 class AdminResetPasswordPayload(BaseModel):
     password: str | None = Field(default=None, min_length=8, max_length=256)
 
@@ -5090,6 +5385,55 @@ async def ai_chat(data: dict[str, Any]) -> dict[str, str]:
         "Shukrani kwa kutumia mfumo wetu. Uko salama?",
     ]
     return {"reply": random.choice(replies)}
+
+
+@app.post("/api/ai-chat/guidance")
+async def ai_guidance(payload: PublicGuidancePayload) -> dict[str, Any]:
+    """Public AI chat guidance endpoint for the landing widget and chat page."""
+    message = clean_text(payload.message) or ""
+    history = [item.model_dump() for item in payload.history]
+    preferred_language = payload.context.user_lang or payload.language
+    language_key = normalize_training_language_code(preferred_language)
+    guidance_state = normalize_guidance_state(payload.context.current_state)
+    guidance_city = normalize_public_guidance_city(payload.context.city)
+    guidance_time = clean_text(payload.context.time)
+    context_topic = clean_text(payload.context.topic)
+    is_first_interaction = bool(payload.is_first_interaction or (not message and not history))
+
+    deepseek_reply = call_deepseek_public_guidance(
+        message=message,
+        history=history,
+        preferred_language=preferred_language,
+        context_topic=context_topic,
+        current_state=guidance_state,
+        city=guidance_city,
+        time_text=guidance_time,
+        client_time_iso=payload.client_time_iso,
+        client_timezone=payload.client_timezone,
+        is_first_interaction=is_first_interaction,
+    )
+    provider = "deepseek" if deepseek_reply else "local"
+    reply_text = deepseek_reply or guidance_fallback_reply(
+        language_key,
+        guidance_state,
+        guidance_city,
+        guidance_time,
+        payload.client_time_iso,
+        payload.client_timezone,
+        is_first_interaction=is_first_interaction,
+        context_topic=context_topic,
+    )
+    suggested_prompts = GUIDANCE_SUGGESTED_PROMPTS.get(language_key) or GUIDANCE_SUGGESTED_PROMPTS["en"]
+
+    return {
+        "reply": reply_text,
+        "provider": provider,
+        "agent_key": "michelle",
+        "agent_name": "Michelle",
+        "topic_keys": ["guidance"],
+        "suggested_prompts": suggested_prompts,
+        "handoff_note": None,
+    }
 
 
 @app.get("/")

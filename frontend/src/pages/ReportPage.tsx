@@ -4,6 +4,17 @@ import { useTranslation } from "react-i18next";
 import { normalizeLocation, regionMunicipalityMap, regions } from "../data/tanzaniaLocations";
 import { API_BASE } from "../lib/apiBase";
 import { collectClientContext } from "../lib/clientContext";
+import {
+  REPORT_QUEUE_EVENT,
+  createLocalInternalTrackingNumber,
+  createLocalQueueId,
+  createLocalReferenceNumber,
+  deleteQueuedReport,
+  saveQueuedReport,
+  type QueuedReportRecord,
+  type ReportQueueStatus,
+} from "../db/queueStore";
+import { requestQueuedReportSync } from "../services/syncQueue";
 const stepDefaults = ["Start", "Reporter", "Target", "Themes", "Location", "Focused", "Details", "Review"];
 const groups = [
   ["Artisanal miner", "Site access, safety, and market barriers.", "miner"],
@@ -377,6 +388,14 @@ const ReportPage = () => {
     ],
     submitSeal: t("reportSubmitSeal"),
   };
+  const offlineText = {
+    savedOffline: "Saved offline. Will send when connection is available.",
+    queuedBadge: "Queued for sync",
+    draftBadge: "Offline draft",
+    syncingBadge: "Syncing",
+    sentBadge: "Sent",
+    failedBadge: "Sync failed",
+  };
 
   const [meta, setMeta] = useState<DraftMeta | null>(null);
   const [draft, setDraft] = useState<ReportDraft>({ ...initialDraft, region: routeState?.region ?? "", municipality: routeState?.municipality ?? "" });
@@ -398,6 +417,9 @@ const ReportPage = () => {
   const [showClosePrompt, setShowClosePrompt] = useState(false);
   const [destroyingDraft, setDestroyingDraft] = useState(false);
   const [clientContext] = useState(() => collectClientContext());
+  const [queueId, setQueueId] = useState<string | null>(null);
+  const [queueStatus, setQueueStatus] = useState<ReportQueueStatus | null>(null);
+  const [queueNotice, setQueueNotice] = useState("");
 
   const branch = getBranch(draft.reporter_group);
   const questions = questionSets[branch].map((question, questionIndex) => ({
@@ -480,8 +502,51 @@ const ReportPage = () => {
         if (!active) return;
         setMeta({ draft_id: data.draft_id, internal_tracking_number: data.internal_tracking_number, public_reference_number: data.public_reference_number, status: data.status });
         setDraft((prev) => ({ ...prev, region: data.region ?? prev.region, municipality: data.municipality ?? prev.municipality, zone: data.zone ?? prev.zone }));
-      } catch {
-        if (active) setError(serviceText.error);
+      } catch (error) {
+        if (!active) return;
+
+        if (!navigator.onLine || error instanceof TypeError) {
+          const offlineMeta = {
+            draft_id: createLocalQueueId(),
+            internal_tracking_number: createLocalInternalTrackingNumber(),
+            public_reference_number: createLocalReferenceNumber(),
+            status: "draft",
+          };
+
+          setMeta(offlineMeta);
+          setDraft((prev) => ({
+            ...prev,
+            region: routeState?.region ?? prev.region,
+            municipality: routeState?.municipality ?? prev.municipality,
+          }));
+          setQueueId(offlineMeta.draft_id);
+          setQueueStatus("draft");
+          setQueueNotice(offlineText.savedOffline);
+          await saveQueuedReport(offlineMeta.draft_id, (current) => ({
+            id: offlineMeta.draft_id,
+            createdAt: current?.createdAt ?? new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            status: "draft",
+            draft: {
+              ...initialDraft,
+              region: routeState?.region ?? "",
+              municipality: routeState?.municipality ?? "",
+            },
+            routeState: {
+              region: routeState?.region ?? null,
+              municipality: routeState?.municipality ?? null,
+            },
+            clientContext,
+            remoteDraftId: null,
+            localReference: offlineMeta.public_reference_number,
+            publicReferenceNumber: offlineMeta.public_reference_number,
+            internalTrackingNumber: offlineMeta.internal_tracking_number,
+            lastError: null,
+          }));
+          return;
+        }
+
+        setError(serviceText.error);
       } finally {
         if (active) setLoading(false);
       }
@@ -491,6 +556,21 @@ const ReportPage = () => {
       active = false;
     };
   }, [clientContext, initAttempt, routeState?.municipality, routeState?.region, serviceText.error]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !queueId) return;
+
+    const onQueueUpdate = (event: Event) => {
+      const detail = (event as CustomEvent<QueuedReportRecord>).detail;
+      if (!detail || detail.id !== queueId) return;
+      applyQueueRecord(detail);
+    };
+
+    window.addEventListener(REPORT_QUEUE_EVENT, onQueueUpdate as EventListener);
+    return () => {
+      window.removeEventListener(REPORT_QUEUE_EVENT, onQueueUpdate as EventListener);
+    };
+  }, [queueId]);
 
   useEffect(() => {
     if (!submitting) return undefined;
@@ -520,16 +600,106 @@ const ReportPage = () => {
   }, [draft.region, draft.zone, zoneLookup]);
 
   const setField = <K extends keyof ReportDraft>(key: K, value: ReportDraft[K]) => setDraft((prev) => ({ ...prev, [key]: value }));
+  const queueStatusLabel = useMemo(() => {
+    if (queueStatus === "draft") return offlineText.draftBadge;
+    if (queueStatus === "queued") return offlineText.queuedBadge;
+    if (queueStatus === "syncing") return offlineText.syncingBadge;
+    if (queueStatus === "sent") return offlineText.sentBadge;
+    if (queueStatus === "failed") return offlineText.failedBadge;
+    return "";
+  }, [offlineText.draftBadge, offlineText.failedBadge, offlineText.queuedBadge, offlineText.sentBadge, offlineText.syncingBadge, queueStatus]);
+
+  const applyQueueRecord = (record: QueuedReportRecord) => {
+    setQueueId(record.id);
+    setQueueStatus(record.status);
+    setMeta((current) =>
+      current
+        ? {
+            draft_id: record.remoteDraftId ?? current.draft_id,
+            internal_tracking_number: record.internalTrackingNumber ?? current.internal_tracking_number,
+            public_reference_number: record.publicReferenceNumber ?? current.public_reference_number,
+            status: record.status,
+          }
+        : current,
+    );
+
+    if (record.status === "queued") {
+      setQueueNotice(offlineText.savedOffline);
+    } else if (record.status === "syncing") {
+      setQueueNotice("Queued report is syncing now.");
+    } else if (record.status === "sent") {
+      setQueueNotice("Queued report sent.");
+    } else if (record.status === "failed" && record.lastError) {
+      setQueueNotice(record.lastError);
+    }
+  };
+
+  const persistQueuedReport = async (nextStatus: ReportQueueStatus, lastError: string | null = null) => {
+    const localMeta = meta ?? {
+      draft_id: createLocalQueueId(),
+      internal_tracking_number: createLocalInternalTrackingNumber(),
+      public_reference_number: createLocalReferenceNumber(),
+      status: nextStatus,
+    };
+
+    const nextQueueId =
+      queueId
+      ?? (localMeta.draft_id.startsWith("local-draft-") ? localMeta.draft_id : `queue-${localMeta.draft_id}`);
+
+    const record = await saveQueuedReport(nextQueueId, (current) => ({
+      id: nextQueueId,
+      createdAt: current?.createdAt ?? new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      status: nextStatus,
+      draft: { ...draft },
+      routeState: {
+        region: (routeState?.region ?? draft.region) || null,
+        municipality: (routeState?.municipality ?? draft.municipality) || null,
+      },
+      clientContext,
+      remoteDraftId:
+        current?.remoteDraftId
+        ?? (localMeta.draft_id.startsWith("local-draft-") ? null : localMeta.draft_id),
+      localReference: current?.localReference ?? localMeta.public_reference_number,
+      publicReferenceNumber: current?.publicReferenceNumber ?? localMeta.public_reference_number,
+      internalTrackingNumber: current?.internalTrackingNumber ?? localMeta.internal_tracking_number,
+      lastError,
+    }));
+
+    if (!meta) {
+      setMeta(localMeta);
+    }
+
+    applyQueueRecord(record);
+    return record;
+  };
+
   const saveDraft = async (payload: Record<string, unknown>) => {
     if (!meta) return;
     setSaving(true);
     try {
+      if (!navigator.onLine || meta.draft_id.startsWith("local-draft-")) {
+        await persistQueuedReport("draft", null);
+        setQueueNotice(offlineText.savedOffline);
+        return;
+      }
+
       const response = await fetch(`${API_BASE}/reports/${meta.draft_id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (!response.ok) throw new Error();
+      if (queueId) {
+        await persistQueuedReport("draft", null);
+      }
+    } catch (error) {
+      if (!navigator.onLine || error instanceof TypeError) {
+        await persistQueuedReport("draft", null);
+        setQueueNotice(offlineText.savedOffline);
+        return;
+      }
+      throw error;
     } finally {
       setSaving(false);
     }
@@ -616,6 +786,18 @@ const ReportPage = () => {
       setStep(7);
       return;
     }
+
+    const hasRemoteDraft = !meta.draft_id.startsWith("local-draft-");
+
+    if (!navigator.onLine || !hasRemoteDraft) {
+      await persistQueuedReport("queued", null);
+      setSubmitted(true);
+      setError("");
+      setQueueNotice(offlineText.savedOffline);
+      void requestQueuedReportSync();
+      return;
+    }
+
     setSubmitting(true);
     setError("");
     try {
@@ -628,12 +810,25 @@ const ReportPage = () => {
         const data = (await response.json().catch(() => ({}))) as { detail?: string };
         throw new Error(data.detail || serviceText.error);
       }
+      if (queueId) {
+        await persistQueuedReport("sent", null);
+      }
       setProgress(100);
       window.setTimeout(() => {
         setSubmitted(true);
         setSubmitting(false);
       }, 2600);
     } catch (err) {
+      if (!navigator.onLine || err instanceof TypeError) {
+        await persistQueuedReport("queued", null);
+        setSubmitting(false);
+        setSubmitted(true);
+        setQueueNotice(offlineText.savedOffline);
+        void requestQueuedReportSync();
+        return;
+      }
+
+      await persistQueuedReport("failed", err instanceof Error ? err.message : serviceText.error);
       setError(err instanceof Error ? err.message : serviceText.error);
       setSubmitting(false);
     } finally {
@@ -653,11 +848,24 @@ const ReportPage = () => {
     if (!meta || destroyingDraft) return;
     setDestroyingDraft(true);
     try {
+      const localQueueKey =
+        queueId ?? (meta.draft_id.startsWith("local-draft-") ? meta.draft_id : `queue-${meta.draft_id}`);
+
+      if (meta.draft_id.startsWith("local-draft-")) {
+        await deleteQueuedReport(localQueueKey);
+        if (typeof window !== "undefined") {
+          window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        }
+        navigate("/", { replace: true });
+        return;
+      }
+
       const response = await fetch(`${API_BASE}/reports/${meta.draft_id}`, { method: "DELETE" });
       if (!response.ok) {
         const data = (await response.json().catch(() => ({}))) as { detail?: string };
         throw new Error(data.detail || serviceText.error);
       }
+      await deleteQueuedReport(localQueueKey).catch(() => undefined);
       if (typeof window !== "undefined") {
         window.scrollTo({ top: 0, left: 0, behavior: "auto" });
       }
@@ -759,6 +967,14 @@ const ReportPage = () => {
             <h1 className="mt-6 text-3xl font-bold">{text.submitted}</h1>
             <p className="mt-4 text-slate-300">{text.submittedBody}</p>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-emerald-100/90">{text.submittedThanks}</p>
+            {queueStatus && queueNotice ? (
+              <div className="mt-6 rounded-3xl border border-cyan-300/20 bg-cyan-400/10 px-5 py-4 text-sm leading-6 text-cyan-100">
+                <span className="mr-2 inline-flex rounded-full border border-cyan-300/20 bg-slate-950/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
+                  {queueStatusLabel}
+                </span>
+                {queueNotice}
+              </div>
+            ) : null}
             <div className="mt-8">
               <div className="rounded-[28px] border border-amber-300/20 bg-gradient-to-br from-amber-400/15 via-amber-300/10 to-emerald-400/10 p-5 shadow-[0_0_0_1px_rgba(251,191,36,0.08)]">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">{text.refTitle}</p>
@@ -847,6 +1063,14 @@ const ReportPage = () => {
                   </>
                 ) : null}
                 {error ? <div className="mt-6 rounded-3xl border border-rose-300/20 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-100">{error}</div> : null}
+                {queueStatus && queueNotice ? (
+                  <div className="mt-4 rounded-3xl border border-cyan-300/20 bg-cyan-400/10 px-4 py-3 text-sm text-cyan-100">
+                    <span className="mr-2 inline-flex rounded-full border border-cyan-300/20 bg-slate-950/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
+                      {queueStatusLabel}
+                    </span>
+                    {queueNotice}
+                  </div>
+                ) : null}
                 {step > 1 && step < 8 && panelsPerStep > 1 ? (
                   <div className="mt-5 rounded-[24px] border border-white/10 bg-slate-950/35 px-4 py-4">
                     <div className="flex items-center justify-between gap-4">
@@ -878,7 +1102,7 @@ const ReportPage = () => {
                   {step === 5 && activeQuestionIndex === 1 ? <div><div className="grid gap-3 sm:grid-cols-2">{severityOptions.map((severity) => <Card key={severity.value} active={draft.severity === severity.value} title={severity.label} onClick={() => setField("severity", severity.value)} />)}</div></div> : null}
                   {step === 5 && activeQuestionIndex === 2 ? <div><div className="grid gap-3 sm:grid-cols-2">{dangerOptions.map((option) => <Card key={String(option.value)} active={draft.immediate_danger === option.value} title={option.label} onClick={() => setField("immediate_danger", option.value)} />)}</div></div> : null}
                   {step === 5 && activeQuestionIndex === 3 ? <div><div className="grid gap-3 md:grid-cols-3">{affectedScopeOptions.map((scope) => <Card key={scope.value} active={draft.affected_scope === scope.value} title={scope.label} onClick={() => setField("affected_scope", scope.value)} />)}</div></div> : null}
-                  {step === 5 && activeQuestionIndex === 4 ? <div><div className="grid gap-6 lg:grid-cols-3"><div>{draft.region ? <div className="rounded-3xl border border-emerald-300/20 bg-emerald-400/10 p-4"><p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-200">{prompts.selectedRegion}</p><p className="mt-2 text-lg font-semibold">{draft.region}</p><button type="button" onClick={() => { setField("region", ""); setField("municipality", ""); setField("zone", ""); setRegionQuery(""); setMunicipalityQuery(""); }} className="mt-4 text-sm font-semibold text-emerald-200">{prompts.changeRegion}</button></div> : <div className="space-y-3"><input type="text" value={regionQuery} onChange={(e) => setRegionQuery(e.target.value)} placeholder={text.region} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm outline-none placeholder:text-slate-500" />{regionQuery.trim() && normalizeLocation(regionQuery) !== normalizeLocation(draft.region) ? <div className="max-h-72 space-y-2 overflow-auto rounded-3xl border border-white/10 bg-slate-950/60 p-3">{filteredRegions.map((r) => <button key={r} type="button" onClick={() => { setField("region", r); setField("municipality", ""); setField("zone", zoneLookup[r] || ""); setRegionQuery(r); setMunicipalityQuery(""); }} className="w-full rounded-2xl bg-white/5 px-4 py-3 text-left text-sm hover:bg-white/10">{r}</button>)}</div> : null}</div>}</div><div>{draft.municipality ? <div className="rounded-3xl border border-cyan-300/20 bg-cyan-400/10 p-4"><p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">{prompts.selectedCouncil}</p><p className="mt-2 text-lg font-semibold">{draft.municipality}</p><button type="button" onClick={() => { setField("municipality", ""); setMunicipalityQuery(""); }} className="mt-4 text-sm font-semibold text-cyan-200">{prompts.changeCouncil}</button></div> : <div className="space-y-3"><input type="text" value={municipalityQuery} onChange={(e) => setMunicipalityQuery(e.target.value)} placeholder={text.municipality} disabled={!draft.region} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm outline-none placeholder:text-slate-500 disabled:opacity-50" />{municipalityQuery.trim() && normalizeLocation(municipalityQuery) !== normalizeLocation(draft.municipality) ? <div className="max-h-72 space-y-2 overflow-auto rounded-3xl border border-white/10 bg-slate-950/60 p-3">{filteredMunicipalities.map((m) => <button key={m} type="button" onClick={() => { setField("municipality", m); setMunicipalityQuery(m); }} className="w-full rounded-2xl bg-white/5 px-4 py-3 text-left text-sm hover:bg-white/10">{m}</button>)}</div> : null}</div>}</div><div><div className="rounded-3xl border border-amber-300/20 bg-amber-400/10 p-4"><p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">{prompts.selectedZone}</p><p className="mt-2 text-lg font-semibold">{draft.zone || prompts.noZone}</p><p className="mt-3 text-sm text-slate-200">Zone is derived automatically from the selected region.</p></div></div></div></div> : null}
+                  {step === 5 && activeQuestionIndex === 4 ? <div><div className="grid gap-6 lg:grid-cols-3"><div>{draft.region ? <div className="rounded-3xl border border-emerald-300/20 bg-emerald-400/10 p-4"><p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-200">{prompts.selectedRegion}</p><p className="mt-2 text-lg font-semibold">{draft.region}</p><button type="button" onClick={() => { setField("region", ""); setField("municipality", ""); setField("zone", ""); setRegionQuery(""); setMunicipalityQuery(""); }} className="mt-4 text-sm font-semibold text-emerald-200">{prompts.changeRegion}</button></div> : <div className="space-y-3"><input type="text" value={regionQuery} onChange={(e) => setRegionQuery(e.target.value)} placeholder={text.region} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm outline-none placeholder:text-slate-500" />{regionQuery.trim() && normalizeLocation(regionQuery) !== normalizeLocation(draft.region) ? <div className="max-h-72 space-y-2 overflow-auto rounded-3xl border border-white/10 bg-slate-950/60 p-3">{filteredRegions.map((r) => <button key={r} type="button" onClick={() => { setField("region", r); setField("municipality", ""); setField("zone", zoneLookup[r] || ""); setRegionQuery(r); setMunicipalityQuery(""); }} className="w-full rounded-2xl bg-white/5 px-4 py-3 text-left text-sm hover:bg-white/10">{r}</button>)}</div> : null}</div>}</div><div>{draft.municipality ? <div className="rounded-3xl border border-cyan-300/20 bg-cyan-400/10 p-4"><p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">{prompts.selectedCouncil}</p><p className="mt-2 text-lg font-semibold">{draft.municipality}</p><button type="button" onClick={() => { setField("municipality", ""); setMunicipalityQuery(""); }} className="mt-4 text-sm font-semibold text-cyan-200">{prompts.changeCouncil}</button></div> : <div className="space-y-3"><input type="text" value={municipalityQuery} onChange={(e) => setMunicipalityQuery(e.target.value)} placeholder={text.municipality} disabled={!draft.region} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm outline-none placeholder:text-slate-500 disabled:opacity-50" />{municipalityQuery.trim() && normalizeLocation(municipalityQuery) !== normalizeLocation(draft.municipality) ? <div className="max-h-72 space-y-2 overflow-auto rounded-3xl border border-white/10 bg-slate-950/60 p-3">{filteredMunicipalities.map((m) => <button key={m} type="button" onClick={() => { setField("municipality", m); setMunicipalityQuery(m); }} className="w-full rounded-2xl bg-white/5 px-4 py-3 text-left text-sm hover:bg-white/10">{m}</button>)}</div> : null}</div>}</div><div><div className="rounded-3xl border border-amber-300/20 bg-amber-400/10 p-4"><p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">{prompts.selectedZone}</p><p className="mt-2 text-lg font-semibold">{draft.zone || prompts.noZone}</p><p className="mt-3 text-sm text-slate-200">{t("reportZoneDerived")}</p></div></div></div></div> : null}
                   {step === 5 && activeQuestionIndex === 5 ? <div><label className="sr-only">{prompts.localArea}</label><input type="text" value={draft.local_area} onChange={(e) => setField("local_area", e.target.value)} placeholder={prompts.localAreaPlaceholder} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm outline-none placeholder:text-slate-500" /></div> : null}
                   {step === 6 ? <div className="space-y-6">{questions[activeQuestionIndex] ? <div key={questions[activeQuestionIndex].id}><div className="grid gap-3 md:grid-cols-2">{questions[activeQuestionIndex].options.map((option) => <Card key={option.value} active={draft.conditional_answers[questions[activeQuestionIndex].id] === option.value} title={option.label} onClick={() => setDraft((prev) => ({ ...prev, conditional_answers: { ...prev.conditional_answers, [questions[activeQuestionIndex].id]: option.value } }))} />)}</div></div> : null}</div> : null}
                   {step === 7 && activeQuestionIndex === 0 ? <div><label className="sr-only">{prompts.narrative}</label><textarea value={draft.narrative} onChange={(e) => setField("narrative", e.target.value)} rows={7} className="w-full rounded-3xl border border-white/10 bg-slate-950/40 px-4 py-4 text-sm leading-6 outline-none" /></div> : null}

@@ -78,3 +78,12 @@ Frontend itafungua kwenye `http://localhost:5173` na itaunganisha na backend kwe
 - **Routing**: React Router
 - **Styling**: Tailwind CSS
 - **PWA**: Manifest.json tayari kwa usakinishaji
+
+## Deployment
+
+Kwa production deployment, soma [DEPLOYMENT.md](DEPLOYMENT.md).
+
+Windows helper scripts:
+
+- `powershell -ExecutionPolicy Bypass -File .\scripts\build-production.ps1`
+- `powershell -ExecutionPolicy Bypass -File .\scripts\start-production.ps1`

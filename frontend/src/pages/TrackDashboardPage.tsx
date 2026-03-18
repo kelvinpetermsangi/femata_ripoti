@@ -1,7 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { API_BASE } from "../lib/apiBase";
+import {
+  ADMIN_CASE_STATUSES,
+  translateAdminDesk,
+  translateAdminStatus,
+  translateBooleanValue,
+} from "../lib/adminI18n";
 
 type AdditionalInfoItem = {
   id: string;
@@ -35,17 +41,7 @@ type LookupErrorState = {
 };
 
 const TRACK_QUEUE_STORAGE_KEY = "femata_public_track_queue";
-const publicStatusOrder = ["Imepokelewa", "Inapitiwa", "Imepelekwa kwa kitengo husika", "Majibu yapo", "Imefungwa"];
-const loadingPhrases = [
-  "Verifying reference integrity",
-  "Opening secure follow-up channel",
-  "Preparing case timeline",
-];
-const destroyPhrases = [
-  "Removing public login access",
-  "Archiving this reference privately",
-  "Closing public follow-up window",
-];
+const publicStatusOrder: string[] = [...ADMIN_CASE_STATUSES];
 
 const toneForStatus = (status: string) =>
   status === "Imefungwa"
@@ -103,13 +99,13 @@ const upsertTrackedQueueItem = (items: TrackedQueueItem[], result: TrackResult):
 const removeTrackedQueueItem = (items: TrackedQueueItem[], reference: string) =>
   items.filter((item) => item.reference_number !== reference);
 
-const formatTimestamp = (value: string) => {
+const formatTimestamp = (value: string, language: string) => {
   if (!value) return "-";
 
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
 
-  return parsed.toLocaleString();
+  return parsed.toLocaleString(language || undefined);
 };
 
 const fetchTrackedReport = async (reference: string): Promise<TrackResult> => {
@@ -135,10 +131,27 @@ const fetchTrackedReport = async (reference: string): Promise<TrackResult> => {
 };
 
 const TrackDashboardPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage || i18n.language;
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlReference = (searchParams.get("reference") ?? "").trim().toUpperCase();
+  const loadingPhrases = useMemo(
+    () => [
+      t("trackLoadingPhrase1", "Verifying reference integrity"),
+      t("trackLoadingPhrase2", "Opening secure follow-up channel"),
+      t("trackLoadingPhrase3", "Preparing case timeline"),
+    ],
+    [t],
+  );
+  const destroyPhrases = useMemo(
+    () => [
+      t("trackDestroyPhrase1", "Removing public login access"),
+      t("trackDestroyPhrase2", "Archiving this reference privately"),
+      t("trackDestroyPhrase3", "Closing public follow-up window"),
+    ],
+    [t],
+  );
 
   const [referenceNumber, setReferenceNumber] = useState(urlReference);
   const [trackResult, setTrackResult] = useState<TrackResult | null>(null);
@@ -172,7 +185,7 @@ const TrackDashboardPage = () => {
     }, 1000);
 
     return () => window.clearInterval(interval);
-  }, [loading]);
+  }, [loading, loadingPhrases]);
 
   useEffect(() => {
     if (!closingReference) return undefined;
@@ -182,35 +195,47 @@ const TrackDashboardPage = () => {
     }, 950);
 
     return () => window.clearInterval(interval);
-  }, [closingReference]);
+  }, [closingReference, destroyPhrases]);
 
   const makeLookupError = (message: string): LookupErrorState => {
     const normalized = message.toLowerCase();
     if (normalized.includes("closed for public tracking")) {
       return {
         kind: "closed",
-        title: "This reference is no longer available for public login",
-        body: "This case was closed from the public tracking side, so it can no longer be opened again with the same reference number. FEMATA administrators can still see the protected institutional record.",
+        title: t("trackLookupClosedTitle", "This reference is no longer available for public login"),
+        body: t(
+          "trackLookupClosedBody",
+          "This case was closed from the public tracking side, so it can no longer be opened again with the same reference number. FEMATA administrators can still see the protected institutional record.",
+        ),
       };
     }
     if (normalized.includes("expired")) {
       return {
         kind: "expired",
-        title: "The public follow-up window has expired",
-        body: "This reference can no longer be viewed from the public tracker. If you still need support or want to continue the matter, please submit a new confidential report.",
+        title: t("trackLookupExpiredTitle", "The public follow-up window has expired"),
+        body: t(
+          "trackLookupExpiredBody",
+          "This reference can no longer be viewed from the public tracker. If you still need support or want to continue the matter, please submit a new confidential report.",
+        ),
       };
     }
     if (normalized.includes("not found")) {
       return {
         kind: "not_found",
-        title: "No query was found with this reference number",
-        body: "Please check the number and try again. If you misplaced the correct reference or still need help, you can submit a new confidential query and FEMATA will handle it with discretion.",
+        title: t("trackLookupNotFoundTitle", "No query was found with this reference number"),
+        body: t(
+          "trackLookupNotFoundBody",
+          "Please check the number and try again. If you misplaced the correct reference or still need help, you can submit a new confidential query and FEMATA will handle it with discretion.",
+        ),
       };
     }
     return {
       kind: "generic",
-      title: "We could not open this query right now",
-      body: "The tracker could not load this reference at the moment. Please try again shortly or submit a new confidential report if you still need help.",
+      title: t("trackLookupGenericTitle", "We could not open this query right now"),
+      body: t(
+        "trackLookupGenericBody",
+        "The tracker could not load this reference at the moment. Please try again shortly or submit a new confidential report if you still need help.",
+      ),
     };
   };
 
@@ -254,7 +279,7 @@ const TrackDashboardPage = () => {
     if (!trimmedRef) {
       setLookupError({
         kind: "generic",
-        title: "Reference number required",
+        title: t("trackReferenceRequiredTitle", "Reference number required"),
         body: t("trackAlert1"),
       });
       setShowWorkspace(true);
@@ -272,7 +297,7 @@ const TrackDashboardPage = () => {
   const handleSubmitAdditionalInfo = async () => {
     const message = additionalInfoText.trim();
     if (!trackResult || message.length < 5) {
-      setAddInfoMessage("Please add a little more detail before sending.");
+      setAddInfoMessage(t("trackAdditionalInfoTooShort", "Please add a little more detail before sending."));
       return;
     }
 
@@ -286,15 +311,17 @@ const TrackDashboardPage = () => {
       });
       const data = (await response.json().catch(() => ({}))) as { detail?: string };
       if (!response.ok) {
-        throw new Error(data.detail || "Could not save your additional information");
+        throw new Error(data.detail || t("trackAdditionalInfoSaveError", "Could not save your additional information"));
       }
 
       setAdditionalInfoText("");
-      setAddInfoMessage("Your additional information was added successfully.");
+      setAddInfoMessage(t("trackAdditionalInfoSuccess", "Your additional information was added successfully."));
       await loadReference(trackResult.reference_number);
       setShowAddInfoPanel(true);
     } catch (err) {
-      setAddInfoMessage(err instanceof Error ? err.message : "Could not save your additional information");
+      setAddInfoMessage(
+        err instanceof Error ? err.message : t("trackAdditionalInfoSaveError", "Could not save your additional information"),
+      );
     } finally {
       setAddInfoLoading(false);
     }
@@ -313,7 +340,7 @@ const TrackDashboardPage = () => {
       });
       const data = (await response.json().catch(() => ({}))) as { detail?: string };
       if (!response.ok) {
-        throw new Error(data.detail || "Could not close this public reference");
+        throw new Error(data.detail || t("trackCloseReferenceError", "Could not close this public reference"));
       }
 
       setTrackedQueue((current) => {
@@ -332,7 +359,9 @@ const TrackDashboardPage = () => {
       }, 2200);
     } catch (err) {
       setClosingReference(false);
-      setLookupError(makeLookupError(err instanceof Error ? err.message : "Could not close this public reference"));
+      setLookupError(
+        makeLookupError(err instanceof Error ? err.message : t("trackCloseReferenceError", "Could not close this public reference")),
+      );
       setShowWorkspace(true);
     }
   };
@@ -365,18 +394,18 @@ const TrackDashboardPage = () => {
                   <path d="M9 12l2 2 4-4" />
                 </svg>
               </div>
-              <p className="mt-8 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Public follow-up closed</p>
-              <h1 className="mt-4 text-3xl font-bold text-white sm:text-4xl">Asante kwa kujitokeza kwako</h1>
+              <p className="mt-8 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">{t("trackClosureEyebrow", "Public follow-up closed")}</p>
+              <h1 className="mt-4 text-3xl font-bold text-white sm:text-4xl">{t("trackClosureTitle", "Thank you for following up")}</h1>
               <div className="mt-5 space-y-4 text-sm leading-8 text-slate-200 sm:text-base">
-                <p>Asante kama changamoto hii umeishatatua. Ni haki yako kufikisha ujumbe kwa shirikisho, na kila malalamiko hufanyiwa kazi kwa usiri mkubwa iwe umeamua kufuatilia hadharani au la.</p>
-                <p>Kama ulikuwa una hofu, ulitaka kufunga ufuatiliaji wa umma, au sasa una taarifa mpya, bado unakaribishwa kujaza query mpya kupitia mfumo wa siri wa FEMATA. Rekodi ya ndani ya taasisi imehifadhiwa salama kwa mapitio ya kiutawala.</p>
+                <p>{t("trackClosureBody1", "If this issue has already been resolved, thank you for taking action. You still have the right to share updates with the federation, and every concern is handled with strong confidentiality whether or not you keep using public follow-up.")}</p>
+                <p>{t("trackClosureBody2", "If you were worried, wanted to close public tracking, or now have new information, you can still submit a fresh confidential report through the FEMATA secure system. The internal institutional record remains stored safely for administrative review.")}</p>
               </div>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link to="/?openReportWizard=1" className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-orange-400 px-6 py-3 text-sm font-semibold text-slate-950">
-                  Fill a new confidential query
+                  {t("trackClosureNewReport", "File a new confidential report")}
                 </Link>
                 <button type="button" onClick={handleBackHome} className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
-                  Back to landing page
+                  {t("backToHome")}
                 </button>
               </div>
             </div>
@@ -401,15 +430,15 @@ const TrackDashboardPage = () => {
             <div className="mx-auto max-w-6xl rounded-[38px] border border-cyan-300/10 bg-[linear-gradient(160deg,rgba(15,23,42,0.88),rgba(17,24,39,0.94),rgba(12,18,35,0.98))] p-8 shadow-[0_35px_90px_rgba(2,6,23,0.5)] backdrop-blur-xl" style={{ animation: "riseIn 360ms ease-out" }}>
               <div className="flex flex-wrap items-start justify-between gap-6">
                 <div className="flex items-start gap-4">
-                  <img src="/femata-logo.jpeg" alt="FEMATA" className="h-16 w-16 rounded-2xl object-cover ring-1 ring-white/10" />
+                  <img src="/femata-logo.jpeg" alt={t("logoAlt")} className="h-16 w-16 rounded-2xl object-cover ring-1 ring-white/10" />
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Track responses</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">{t("trackResponsesEyebrow", "Track responses")}</p>
                     <h1 className="mt-3 text-3xl font-bold text-white sm:text-4xl">{t("trackModalTitle")}</h1>
                     <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">{t("trackDesc")}</p>
                   </div>
                 </div>
                 <Link to="/" className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
-                  Go back
+                  {t("trackGoBack", "Go back")}
                 </Link>
               </div>
 
@@ -448,8 +477,8 @@ const TrackDashboardPage = () => {
                   <path d="M8 12h8" />
                 </svg>
               </div>
-              <p className="mt-8 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Opening case space</p>
-              <h2 className="mt-4 text-3xl font-bold text-white">Preparing your reference dashboard</h2>
+              <p className="mt-8 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">{t("trackWorkspaceLoadingEyebrow", "Opening case space")}</p>
+              <h2 className="mt-4 text-3xl font-bold text-white">{t("trackWorkspaceLoadingTitle", "Preparing your reference dashboard")}</h2>
               <p className="mt-4 text-sm leading-7 text-slate-300">{loadingPhrases[loadingPhraseIndex]}</p>
               <div className="mt-8 overflow-hidden rounded-full border border-white/10 bg-white/5 p-1">
                 <div className="h-3 rounded-full bg-gradient-to-r from-cyan-300 via-amber-300 to-emerald-300" style={{ width: `${34 + loadingPhraseIndex * 22}%`, transition: "width 500ms ease" }} />
@@ -458,7 +487,7 @@ const TrackDashboardPage = () => {
           ) : lookupError ? (
             <div className="mx-auto max-w-5xl grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
               <div className="rounded-[36px] border border-rose-300/20 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(28,25,49,0.94))] p-8 shadow-2xl backdrop-blur-xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-rose-200">Reference check result</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-rose-200">{t("trackLookupResultEyebrow", "Reference check result")}</p>
                 <div className="mt-6 inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 font-mono text-sm text-slate-200">
                   {referenceNumber || urlReference || t("trackInputPlaceholder")}
                 </div>
@@ -466,22 +495,22 @@ const TrackDashboardPage = () => {
                 <p className="mt-4 max-w-2xl text-sm leading-8 text-slate-300">{lookupError.body}</p>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                   <button type="button" onClick={resetToLookup} className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
-                    Try another reference
+                    {t("trackTryAnotherReference", "Try another reference")}
                   </button>
                   <Link to="/?openReportWizard=1" className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-orange-400 px-6 py-3 text-sm font-semibold text-slate-950">
-                    Re-file a confidential query
+                    {t("trackRefileConfidential", "Re-file a confidential report")}
                   </Link>
                 </div>
               </div>
 
               <aside className="rounded-[36px] border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Need help?</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">{t("trackNeedHelpTitle", "Need help?")}</p>
                 <div className="mt-5 space-y-4">
                   <div className="rounded-3xl border border-white/10 bg-slate-950/35 p-4 text-sm leading-7 text-slate-300">
-                    If the reference number is wrong, the tracker will not open the query.
+                    {t("trackNeedHelpBody1", "If the reference number is wrong, the tracker will not open the query.")}
                   </div>
                   <div className="rounded-3xl border border-white/10 bg-slate-950/35 p-4 text-sm leading-7 text-slate-300">
-                    Re-filing will reopen the location-first confidential report flow so FEMATA can route the issue to the correct regional helpdesk.
+                    {t("trackNeedHelpBody2", "Filing a new confidential report will reopen the protected reporting flow so FEMATA can route the issue to the right regional desk.")}
                   </div>
                 </div>
               </aside>
@@ -490,7 +519,7 @@ const TrackDashboardPage = () => {
             <div className="grid gap-8 xl:grid-cols-[320px_minmax(0,1fr)]">
               <aside className="space-y-6">
                 <div className="rounded-[34px] border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Tracked references</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">{t("trackTrackedReferencesTitle", "Tracked references")}</p>
                   <div className="mt-5 space-y-3">
                     {trackedQueue.map((item) => (
                       <button
@@ -502,32 +531,32 @@ const TrackDashboardPage = () => {
                         }`}
                       >
                         <p className="break-all font-mono text-sm font-semibold text-white">{item.reference_number}</p>
-                        <p className="mt-2 text-xs text-slate-400">{formatTimestamp(item.updated_at)}</p>
+                        <p className="mt-2 text-xs text-slate-400">{formatTimestamp(item.updated_at, language)}</p>
                         <div className="mt-3 flex items-center justify-between gap-3">
                           <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold ${toneForStatus(item.status)}`}>
-                            {item.status}
+                            {translateAdminStatus(t, item.status)}
                           </span>
-                          <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{item.assigned_desk}</span>
+                          <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{translateAdminDesk(t, item.assigned_desk)}</span>
                         </div>
                       </button>
                     ))}
                     {trackedQueue.length === 0 ? (
                       <div className="rounded-3xl border border-dashed border-white/10 px-4 py-8 text-center text-sm leading-7 text-slate-300">
-                        Your successfully tracked references will appear here.
+                        {t("trackTrackedReferencesEmpty", "References you successfully open will appear here for quick access.")}
                       </div>
                     ) : null}
                   </div>
                 </div>
 
                 <div className="rounded-[34px] border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-200">Need to say more?</p>
-                  <p className="mt-4 text-sm leading-7 text-slate-300">If there is a new development, missing context, or a clarification you want FEMATA to see, you can add more information below.</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-200">{t("trackAdditionalInfoPromptTitle", "Need to say more?")}</p>
+                  <p className="mt-4 text-sm leading-7 text-slate-300">{t("trackAdditionalInfoPromptBody", "If there is a new development, missing context, or a clarification you want FEMATA to see, you can add more information below.")}</p>
                   <button
                     type="button"
                     onClick={() => setShowAddInfoPanel((current) => !current)}
                     className="mt-5 inline-flex rounded-full border border-cyan-300/20 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/15"
                   >
-                    {showAddInfoPanel ? "Hide extra information form" : "Add more information"}
+                    {showAddInfoPanel ? t("trackHideAdditionalInfo", "Hide extra information form") : t("trackShowAdditionalInfo", "Add more information")}
                   </button>
                 </div>
               </aside>
@@ -537,24 +566,24 @@ const TrackDashboardPage = () => {
                   <div className="pointer-events-none absolute inset-y-0 left-0 w-28 bg-gradient-to-r from-transparent via-cyan-200/10 to-transparent" style={{ animation: "shimmerSweep 3.4s linear infinite" }} />
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Public case dashboard</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">{t("trackPublicDashboardEyebrow", "Public case dashboard")}</p>
                       <h1 className="mt-4 break-all font-mono text-2xl font-bold text-white sm:text-4xl">{trackResult.reference_number}</h1>
                       <div className="mt-5 flex flex-wrap items-center gap-3">
                         <span className={`inline-flex rounded-full border px-4 py-2 text-sm font-semibold ${toneForStatus(trackResult.status)}`}>
-                          {trackResult.status}
+                          {translateAdminStatus(t, trackResult.status)}
                         </span>
                         <span className="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200">
-                          {trackResult.assigned_desk}
+                          {translateAdminDesk(t, trackResult.assigned_desk)}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex flex-wrap gap-3">
                       <button type="button" onClick={resetToLookup} className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
-                        Use another reference
+                        {t("trackUseAnotherReference", "Use another reference")}
                       </button>
                       <button type="button" onClick={() => setShowClosePrompt(true)} className="rounded-full border border-rose-300/20 bg-rose-500/10 px-5 py-3 text-sm font-semibold text-rose-100 transition hover:bg-rose-500/15">
-                        Close this reference
+                        {t("trackCloseReferenceButton", "Close this reference")}
                       </button>
                     </div>
                   </div>
@@ -562,15 +591,15 @@ const TrackDashboardPage = () => {
                   <div className="mt-8 grid gap-4 sm:grid-cols-3">
                     <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
                       <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("updatedLabel")}</p>
-                      <p className="mt-3 text-sm font-semibold text-white">{formatTimestamp(trackResult.updated_at)}</p>
+                      <p className="mt-3 text-sm font-semibold text-white">{formatTimestamp(trackResult.updated_at, language)}</p>
                     </div>
                     <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Action started</p>
-                      <p className="mt-3 text-sm font-semibold text-white">{trackResult.action_started ? "Yes" : "No"}</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("trackActionStartedLabel", "Action started")}</p>
+                      <p className="mt-3 text-sm font-semibold text-white">{translateBooleanValue(t, Boolean(trackResult.action_started))}</p>
                     </div>
                     <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Public access window</p>
-                      <p className="mt-3 text-sm font-semibold text-white">{trackResult.public_access_expires_at ? formatTimestamp(trackResult.public_access_expires_at) : "Active while this public case space stays open"}</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("trackPublicAccessWindowLabel", "Public access window")}</p>
+                      <p className="mt-3 text-sm font-semibold text-white">{trackResult.public_access_expires_at ? formatTimestamp(trackResult.public_access_expires_at, language) : t("trackPublicAccessWindowActive", "Active while this public case space stays open")}</p>
                     </div>
                   </div>
                 </div>
@@ -579,7 +608,7 @@ const TrackDashboardPage = () => {
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-200">{t("statusLabel")}</p>
-                      <h2 className="mt-3 text-2xl font-bold text-white">Where your query is now</h2>
+                      <h2 className="mt-3 text-2xl font-bold text-white">{t("trackTimelineTitle", "Where your query is now")}</h2>
                     </div>
                     <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200">
                       {currentStatusIndex >= 0 ? `${currentStatusIndex + 1} / ${publicStatusOrder.length}` : `0 / ${publicStatusOrder.length}`}
@@ -624,13 +653,13 @@ const TrackDashboardPage = () => {
                                   : "border-white/10 bg-white/5"
                             }`}
                           >
-                            <p className={`text-sm font-semibold ${isPending ? "text-slate-300" : "text-white"}`}>{status}</p>
+                            <p className={`text-sm font-semibold ${isPending ? "text-slate-300" : "text-white"}`}>{translateAdminStatus(t, status)}</p>
                             <p className="mt-2 text-sm leading-6 text-slate-300">
                               {isCurrent
-                                ? `${t("statusLabel")}: ${trackResult.status}`
+                                ? `${t("statusLabel")}: ${translateAdminStatus(t, trackResult.status)}`
                                 : isComplete
-                                  ? "Completed"
-                                  : "Pending"}
+                                  ? t("trackTimelineCompleted", "Completed")
+                                  : t("trackTimelinePending", "Pending")}
                             </p>
                           </div>
                         </div>
@@ -649,8 +678,8 @@ const TrackDashboardPage = () => {
                     <div className="rounded-[36px] border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Additional information</p>
-                          <h3 className="mt-3 text-xl font-bold text-white">What else you have added</h3>
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">{t("trackAdditionalInfoTitle", "Additional information")}</p>
+                          <h3 className="mt-3 text-xl font-bold text-white">{t("trackAdditionalInfoSubtitle", "What else you have added")}</h3>
                         </div>
                         <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200">
                           {trackResult.additional_information.length}
@@ -659,12 +688,12 @@ const TrackDashboardPage = () => {
 
                       {showAddInfoPanel ? (
                         <div className="mt-6 rounded-3xl border border-cyan-300/20 bg-cyan-400/10 p-4">
-                          <label className="mb-3 block text-sm font-semibold text-white">Add more information for FEMATA</label>
+                          <label className="mb-3 block text-sm font-semibold text-white">{t("trackAdditionalInfoLabel", "Add more information for FEMATA")}</label>
                           <textarea
                             value={additionalInfoText}
                             onChange={(event) => setAdditionalInfoText(event.target.value)}
                             rows={5}
-                            placeholder="Share any new development, correction, or detail that can help this query move forward."
+                            placeholder={t("trackAdditionalInfoPlaceholder", "Share any new development, correction, or detail that can help this query move forward.")}
                             className="w-full rounded-3xl border border-white/10 bg-slate-950/50 px-4 py-4 text-sm leading-7 text-white outline-none placeholder:text-slate-500"
                           />
                           <div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -674,7 +703,7 @@ const TrackDashboardPage = () => {
                               disabled={addInfoLoading}
                               className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-300 via-sky-400 to-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:opacity-95 disabled:opacity-70"
                             >
-                              {addInfoLoading ? "Sending..." : "Send additional information"}
+                              {addInfoLoading ? t("chatSending", "Sending...") : t("trackAdditionalInfoSend", "Send additional information")}
                             </button>
                             <button
                               type="button"
@@ -685,7 +714,7 @@ const TrackDashboardPage = () => {
                               }}
                               className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
                             >
-                              Cancel
+                              {t("trackAdditionalInfoCancel", "Cancel")}
                             </button>
                           </div>
                           {addInfoMessage ? <p className="mt-4 text-sm text-cyan-100">{addInfoMessage}</p> : null}
@@ -697,16 +726,16 @@ const TrackDashboardPage = () => {
                           <div key={item.id} className="rounded-3xl border border-white/10 bg-slate-950/35 p-4">
                             <div className="flex flex-wrap items-center justify-between gap-3">
                               <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                                {item.source === "public_close" ? "Public closure note" : "Public follow-up note"}
+                                {item.source === "public_close" ? t("trackAdditionalInfoNoteClose", "Public closure note") : t("trackAdditionalInfoNoteFollowup", "Public follow-up note")}
                               </span>
-                              <span className="text-xs text-slate-500">{formatTimestamp(item.created_at)}</span>
+                              <span className="text-xs text-slate-500">{formatTimestamp(item.created_at, language)}</span>
                             </div>
                             <p className="mt-3 text-sm leading-7 text-slate-200">{item.message}</p>
                           </div>
                         ))}
                         {trackResult.additional_information.length === 0 ? (
                           <div className="rounded-3xl border border-dashed border-white/10 px-4 py-8 text-center text-sm leading-7 text-slate-300">
-                            No additional information has been added yet.
+                            {t("trackAdditionalInfoEmpty", "No additional information has been added yet.")}
                           </div>
                         ) : null}
                       </div>
@@ -714,19 +743,19 @@ const TrackDashboardPage = () => {
                   </div>
 
                   <div className="rounded-[36px] border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Public follow-up guide</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">{t("trackGuideTitle", "Public follow-up guide")}</p>
                     <div className="mt-5 space-y-4">
                       <div className="rounded-3xl border border-white/10 bg-slate-950/40 p-4">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Reference</p>
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("trackGuideReferenceLabel", "Reference")}</p>
                         <p className="mt-3 break-all font-mono text-sm font-semibold text-white">{trackResult.reference_number}</p>
                       </div>
                       <div className="rounded-3xl border border-white/10 bg-slate-950/40 p-4">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">What you can do here</p>
-                        <p className="mt-3 text-sm leading-7 text-slate-300">Track progress, read feedback, add more context, or close this public reference if you no longer want it visible on the public side.</p>
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("trackGuideActionsLabel", "What you can do here")}</p>
+                        <p className="mt-3 text-sm leading-7 text-slate-300">{t("trackGuideActionsBody", "Track progress, read feedback, add more context, or close this public reference if you no longer want it visible on the public side.")}</p>
                       </div>
                       <div className="rounded-3xl border border-white/10 bg-slate-950/40 p-4">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Confidentiality note</p>
-                        <p className="mt-3 text-sm leading-7 text-slate-300">Even if you close this public reference, the internal administrative record remains available only to the protected FEMATA review side.</p>
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("trackGuideConfidentialityLabel", "Confidentiality note")}</p>
+                        <p className="mt-3 text-sm leading-7 text-slate-300">{t("trackGuideConfidentialityBody", "Even if you close this public reference, the internal administrative record remains available only to the protected FEMATA review side.")}</p>
                       </div>
                     </div>
                   </div>
@@ -741,21 +770,21 @@ const TrackDashboardPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/88 px-4">
           <div className="w-full max-w-xl overflow-hidden rounded-[34px] border border-rose-300/20 bg-slate-950/95 shadow-2xl backdrop-blur-xl">
             <div className="border-b border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(251,113,133,0.15),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.12),transparent_22%)] px-6 py-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-rose-200">Close public reference</p>
-              <h2 className="mt-3 text-2xl font-bold text-white">Do you want to close this reference for public tracking?</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-rose-200">{t("trackClosePromptEyebrow", "Close public reference")}</p>
+              <h2 className="mt-3 text-2xl font-bold text-white">{t("trackClosePromptTitle", "Do you want to close this reference for public tracking?")}</h2>
             </div>
             <div className="px-6 py-6">
-              <p className="text-sm leading-8 text-slate-200">If you continue, this reference number will be removed from your public dashboard and it will no longer work for public login. FEMATA administrators will still keep the protected institutional record and the history of what happened.</p>
+              <p className="text-sm leading-8 text-slate-200">{t("trackClosePromptBody", "If you continue, this reference number will be removed from your public dashboard and it will no longer work for public login. FEMATA administrators will still keep the protected institutional record and the history of what happened.")}</p>
               <div className="mt-5 rounded-3xl border border-white/10 bg-white/5 px-4 py-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Reference number</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("trackReferenceNumberLabel", "Reference number")}</p>
                 <p className="mt-3 break-all font-mono text-sm font-semibold text-white">{trackResult.reference_number}</p>
               </div>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
                 <button type="button" onClick={() => setShowClosePrompt(false)} className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
-                  Keep it open
+                  {t("trackKeepOpen", "Keep it open")}
                 </button>
                 <button type="button" onClick={() => void handleConfirmClose()} className="rounded-full bg-gradient-to-r from-rose-300 via-rose-400 to-amber-300 px-5 py-3 text-sm font-semibold text-slate-950">
-                  Agree and close
+                  {t("trackAgreeAndClose", "Agree and close")}
                 </button>
               </div>
             </div>
@@ -774,8 +803,8 @@ const TrackDashboardPage = () => {
                   <path d="M12 8v3" />
                 </svg>
               </div>
-              <p className="mt-8 text-xs font-semibold uppercase tracking-[0.24em] text-rose-200">Closing public query</p>
-              <h2 className="mt-4 text-3xl font-bold text-white">Removing this reference from public access</h2>
+              <p className="mt-8 text-xs font-semibold uppercase tracking-[0.24em] text-rose-200">{t("trackClosingEyebrow", "Closing public query")}</p>
+              <h2 className="mt-4 text-3xl font-bold text-white">{t("trackClosingTitle", "Removing this reference from public access")}</h2>
               <p className="mt-4 text-sm leading-7 text-slate-300">{destroyPhrases[destroyPhraseIndex]}</p>
               <div className="mt-8 overflow-hidden rounded-full border border-white/10 bg-white/5 p-1">
                 <div className="h-3 rounded-full bg-gradient-to-r from-rose-300 via-amber-300 to-cyan-300" style={{ width: `${34 + destroyPhraseIndex * 23}%`, transition: "width 450ms ease" }} />
