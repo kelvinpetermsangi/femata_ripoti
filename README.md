@@ -90,6 +90,12 @@ Kwa kufuatilia mabadiliko na version:
 - [VERSION.md](VERSION.md)
 - [CHANGELOG.md](CHANGELOG.md)
 
+## Android App Shell (Capacitor)
+
+Mradi huu sasa una Android shell ya Capacitor huku web app ikibaki source of truth.
+
+- Mwongozo: [frontend/CAPACITOR_ANDROID.md](frontend/CAPACITOR_ANDROID.md)
+
 Windows helper scripts:
 
 - `powershell -ExecutionPolicy Bypass -File .\scripts\build-production.ps1`

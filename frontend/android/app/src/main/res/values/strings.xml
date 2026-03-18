@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FEMATA Ripoti</string>
+    <string name="title_activity_main">FEMATA Ripoti</string>
+    <string name="package_name">tz.or.femata.ripoti</string>
+    <string name="custom_url_scheme">tz.or.femata.ripoti</string>
+</resources>

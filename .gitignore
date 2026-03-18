@@ -19,6 +19,8 @@ frontend/.tmp/
 # Local tooling and temp
 .codex-temp/
 .pip-tmp/
+.tmp-npm-cache/
+frontend/.tmp-npm-cache/
 
 # OS/editor noise
 Thumbs.db

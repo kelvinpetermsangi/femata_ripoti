@@ -2,6 +2,23 @@
 
 All notable changes to this repository are documented in this file.
 
+## [0.8.3] - 2026-03-18
+
+### Added
+- Capacitor Android app shell scaffolding under `frontend/android`.
+- Capacitor configuration file for Android packaging (`frontend/capacitor.config.ts`).
+- Android shell workflow documentation (`frontend/CAPACITOR_ANDROID.md`).
+- Frontend scripts for Android shell workflow:
+  - `cap:sync`
+  - `cap:open:android`
+  - `cap:run:android`
+
+### Changed
+- Kept existing web/PWA frontend as source of truth while enabling Android wrapper packaging via Capacitor.
+
+### Deployment
+- Released and deployed to VPS for ongoing web regression testing.
+
 ## [0.8.2] - 2026-03-18
 
 ### Added
